@@ -3,14 +3,13 @@
 
 using System; //Needed for KeyVaultConfigurationProvider
 using System.IdentityModel.Tokens;
-using Microsoft.AspNet.Authentication.JwtBearer;
-using Microsoft.AspNet.Authorization;
-using Microsoft.AspNet.Builder;
-using Microsoft.AspNet.Diagnostics;
-using Microsoft.AspNet.Hosting;
-using Microsoft.AspNet.Http.Features;
-using Microsoft.Data.Entity;
-using Microsoft.Dnx.Runtime;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -20,6 +19,7 @@ using Tailspin.Surveys.Security.Policy;
 using AppConfiguration = Tailspin.Surveys.WebApi.Configuration;
 using Constants = Tailspin.Surveys.Common.Constants;
 using Microsoft.Extensions.PlatformAbstractions;
+using System.IO;
 
 namespace Tailspin.Surveys.WebApi
 {
@@ -30,7 +30,7 @@ namespace Tailspin.Surveys.WebApi
     {
         private AppConfiguration.ConfigurationOptions _configOptions = new AppConfiguration.ConfigurationOptions();
 
-        public Startup(IHostingEnvironment env, IApplicationEnvironment appEnv, ILoggerFactory loggerFactory)
+        public Startup(IHostingEnvironment env, ApplicationEnvironment appEnv, ILoggerFactory loggerFactory)
         {
             InitializeLogging(loggerFactory);
             var builder = new ConfigurationBuilder()
@@ -47,7 +47,7 @@ namespace Tailspin.Surveys.WebApi
 
             // Uncomment the block of code below if you want to load secrets from KeyVault
             // It is recommended to use certs for all authentication when using KeyVault
-//#if DNX451
+//#if NET451
 //            var config = builder.Build();
 //            builder.AddKeyVaultSecrets(config["AzureAd:ClientId"],
 //                config["KeyVault:Name"],
@@ -56,8 +56,10 @@ namespace Tailspin.Surveys.WebApi
 //                loggerFactory);
 //#endif
 
-            builder.Build().Bind(_configOptions);
+            Configuration = builder.Build();
         }
+
+        public IConfigurationRoot Configuration { get; }
 
         // This method gets called by a runtime.
         // Use this method to add services to the container
@@ -82,9 +84,8 @@ namespace Tailspin.Surveys.WebApi
             });
 
             // Add Entity Framework services to the services container.
-            services.AddEntityFramework()
-                .AddSqlServer()
-                .AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(_configOptions.Data.SurveysConnectionString));
+            services.AddEntityFrameworkSqlServer()
+                .AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(Configuration.GetSection("Data")["SurveysConnectionString"]));
 
             services.AddScoped<TenantManager, TenantManager>();
             services.AddScoped<UserManager, UserManager>();
@@ -108,32 +109,59 @@ namespace Tailspin.Surveys.WebApi
             {
                 //app.UseBrowserLink();
                 app.UseDeveloperExceptionPage();
-                app.UseDatabaseErrorPage(options =>
-                {
-                    options.ShowExceptionDetails = true;
-                });
+
+                app.UseDatabaseErrorPage();
+                //app.UseDatabaseErrorPage(options =>
+                //{
+                //    options.ShowExceptionDetails = true;
+                //});
             }
 
-            app.UseIISPlatformHandler();
+            // https://github.com/aspnet/Announcements/issues/164
+            //app.UseIISPlatformHandler();
 
-            app.UseJwtBearerAuthentication(options =>
-            {
-                options.Audience = _configOptions.AzureAd.WebApiResourceId;
-                options.Authority = Constants.AuthEndpointPrefix + "common/";
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    //Instead of validating against a fixed set of known issuers, we perform custom multi-tenant validation logic
-                    ValidateIssuer = false,
-                };
-                options.Events = new SurveysJwtBearerEvents(loggerFactory.CreateLogger<SurveysJwtBearerEvents>());
+            app.UseJwtBearerAuthentication(new JwtBearerOptions {
+                //
+                Audience = _configOptions.AzureAd.WebApiResourceId,
+                //
+                Authority = Constants.AuthEndpointPrefix,
+                TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters {
+                    ValidateIssuer = false
+                },
+                Events= new SurveysJwtBearerEvents(loggerFactory.CreateLogger<SurveysJwtBearerEvents>())
             });
+            //app.UseJwtBearerAuthentication(options =>
+            //{
+            //    options.Audience = _configOptions.AzureAd.WebApiResourceId;
+            //    options.Authority = Constants.AuthEndpointPrefix + "common/";
+            //    options.TokenValidationParameters = new TokenValidationParameters
+            //    {
+            //        //Instead of validating against a fixed set of known issuers, we perform custom multi-tenant validation logic
+            //        ValidateIssuer = false,
+            //    };
+            //    options.Events = new SurveysJwtBearerEvents(loggerFactory.CreateLogger<SurveysJwtBearerEvents>());
+            //});
             // Add MVC to the request pipeline.
             app.UseMvc();
         }
         private void InitializeLogging(ILoggerFactory loggerFactory)
         {
-            loggerFactory.MinimumLevel = LogLevel.Information;
+            //https://github.com/aspnet/Logging/commit/1308245d2c470fcf437299331b8175e2e417af04
+            //loggerFactory.MinimumLevel = LogLevel.Information;
+
             loggerFactory.AddDebug(LogLevel.Information);
+        }
+
+        public static void Main(string[] args)
+        {
+            var host = new WebHostBuilder()
+                .UseKestrel()
+                .UseContentRoot(Directory.GetCurrentDirectory())
+                .UseIISIntegration()
+                .UseStartup<Startup>()
+                .Build();
+
+            host.Run();
         }
     }
 }

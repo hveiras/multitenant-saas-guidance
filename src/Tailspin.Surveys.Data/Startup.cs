@@ -6,19 +6,21 @@
 // Also https://github.com/aspnet/EntityFramework/issues/2256
 
 using System; //Needed for KeyVaultConfigurationProvider
-using Microsoft.AspNet.Hosting;
-using Microsoft.Data.Entity;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.PlatformAbstractions;
 using Microsoft.Extensions.Logging;
 using Tailspin.Surveys.Data.Configuration;
 using Tailspin.Surveys.Data.DataModels;
+using System.IO;
 
 public class Startup
 {
-    private ConfigurationOptions _configOptions = new ConfigurationOptions();
-    public Startup(IHostingEnvironment env, IApplicationEnvironment appEnv, ILoggerFactory loggerFactory)
+    // #1 - Not used. Just passed as binding parameter for a non-existent method.
+    //private ConfigurationOptions _configOptions = new ConfigurationOptions();
+    public Startup(IHostingEnvironment env, ApplicationEnvironment appEnv, ILoggerFactory loggerFactory)
     {
         InitializeLogging(loggerFactory);
         var builder = new ConfigurationBuilder()
@@ -31,28 +33,34 @@ public class Startup
             builder.AddUserSecrets();
         }
         //Uncomment the block of code below to use a connection string from KeyVault for migrations
-//#if DNX451
-//        var config = builder.Build();
-//        builder.AddKeyVaultSecrets(config["ClientId"],
-//            config["KeyVault:Name"],
-//            config["Asymmetric:CertificateThumbprint"],
-//            Convert.ToBoolean(config["Asymmetric:ValidationRequired"]),
-//            loggerFactory);
-//#endif
-        builder.Build().Bind(_configOptions);
+        //#if NET451
+        //        var config = builder.Build();
+        //        builder.AddKeyVaultSecrets(config["ClientId"],
+        //            config["KeyVault:Name"],
+        //            config["Asymmetric:CertificateThumbprint"],
+        //            Convert.ToBoolean(config["Asymmetric:ValidationRequired"]),
+        //            loggerFactory);
+        //#endif
+
+        // check #1 above
+        //builder.Build().Bind(_configOptions);
+        Configuration = builder.Build();
     }
+
+    public IConfigurationRoot Configuration { get; }
 
     public void ConfigureServices(IServiceCollection services)
     {
-        services.AddEntityFramework()
-            .AddSqlServer()
+        services.AddEntityFrameworkSqlServer()
             .AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(_configOptions.Data.SurveysConnectionString));
+                options.UseSqlServer(Configuration.GetSection("Data")["SurveysConnectionString"]));
     }
     public void Configure() { }
     private void InitializeLogging(ILoggerFactory loggerFactory)
     {
-        loggerFactory.MinimumLevel = LogLevel.Information;
+        //https://github.com/aspnet/Logging/commit/1308245d2c470fcf437299331b8175e2e417af04
+        //loggerFactory.MinimumLevel = LogLevel.Information;
+
         loggerFactory.AddDebug(LogLevel.Information);
     }
 }

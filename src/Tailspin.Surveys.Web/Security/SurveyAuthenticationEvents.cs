@@ -6,8 +6,8 @@ using System.IdentityModel.Tokens;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNet.Authentication;
-using Microsoft.AspNet.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Tailspin.Surveys.Common;
@@ -15,6 +15,7 @@ using Tailspin.Surveys.Common.Configuration;
 using Tailspin.Surveys.Data.DataModels;
 using Tailspin.Surveys.Security;
 using Tailspin.Surveys.Web.Logging;
+using System.Security;
 
 namespace Tailspin.Surveys.Web.Security
 {
@@ -43,7 +44,7 @@ namespace Tailspin.Surveys.Web.Security
         /// </summary>
         /// <param name="context">The <see cref="Microsoft.AspNet.Authentication.OpenIdConnect.RedirectContext"/> for this event.</param>
         /// <returns>A completed <see cref="System.Threading.Tasks.Task"/></returns>
-        public override Task RedirectToAuthenticationEndpoint(RedirectContext context)
+        public override Task RedirectToIdentityProvider(RedirectContext context)
         {
             if (context.IsSigningUp())
             {
@@ -95,7 +96,7 @@ namespace Tailspin.Surveys.Web.Security
             Guard.ArgumentNotNull(context, nameof(context));
             Guard.ArgumentNotNull(tenantManager, nameof(tenantManager));
 
-            var principal = context.AuthenticationTicket.Principal;
+            var principal = context.Ticket.Principal;
             var issuerValue = principal.GetIssuerValue();
             var tenant = new Tenant
             {
@@ -183,9 +184,9 @@ namespace Tailspin.Surveys.Web.Security
         /// </summary>
         /// <param name="context">An OIDC-supplied <see cref="Microsoft.AspNet.Authentication.OpenIdConnect.AuthenticationValidatedContext"/> containing the current authentication information.</param>
         /// <returns>a completed <see cref="System.Threading.Tasks.Task"/></returns>
-        public override async Task AuthenticationValidated(AuthenticationValidatedContext context)
+        public override async Task TokenValidated(TokenValidatedContext context)
         {
-            var principal = context.AuthenticationTicket.Principal;
+            var principal = context.Ticket.Principal;
             var userId = principal.GetObjectIdentifierValue();
             var tenantManager = context.HttpContext.RequestServices.GetService<TenantManager>();
             var userManager = context.HttpContext.RequestServices.GetService<UserManager>();
@@ -209,7 +210,7 @@ namespace Tailspin.Surveys.Web.Security
                 }
 
                 // In this case, we need to go ahead and set up the user signing us up.
-                await CreateOrUpdateUserAsync(context.AuthenticationTicket, userManager, tenant)
+                await CreateOrUpdateUserAsync(context.Ticket, userManager, tenant)
                     .ConfigureAwait(false);
             }
             else
@@ -217,10 +218,14 @@ namespace Tailspin.Surveys.Web.Security
                 if (tenant == null)
                 {
                     _logger.UnregisteredUserSignInAttempted(userId, issuerValue);
+#if NET451
                     throw new SecurityTokenValidationException($"Tenant {issuerValue} is not registered");
+#else
+                    throw new SecurityException($"Tenant {issuerValue} is not registered");
+#endif
                 }
 
-                await CreateOrUpdateUserAsync(context.AuthenticationTicket, userManager, tenant)
+                await CreateOrUpdateUserAsync(context.Ticket, userManager, tenant)
                     .ConfigureAwait(false);
             }
         }
@@ -238,14 +243,14 @@ namespace Tailspin.Surveys.Web.Security
 
         public override async Task AuthorizationCodeReceived(AuthorizationCodeReceivedContext context)
         {
-            var principal = context.AuthenticationTicket.Principal;
+            var principal = context.Ticket.Principal;
             var surveysTokenService = context.HttpContext.RequestServices.GetService<ISurveysTokenService>();
             try
             {
                 await surveysTokenService.RequestTokenAsync(
                     principal,
                     context.ProtocolMessage.Code,
-                    context.AuthenticationTicket.Properties.Items[OpenIdConnectDefaults.RedirectUriForCodePropertiesKey],
+                    context.Ticket.Properties.Items[OpenIdConnectDefaults.RedirectUriForCodePropertiesKey],
                     _adOptions.WebApiResourceId)
                     .ConfigureAwait(false);
             }
@@ -263,11 +268,12 @@ namespace Tailspin.Surveys.Web.Security
 
         // These method are overridden to make it easier to debug the OIDC auth flow.
 
+        // Removed: https://github.com/aspnet/Security/commit/3f596108aac3d8fc7fb40d39e19a7f897a90c198
         // ReSharper disable RedundantOverridenMember
-        public override Task AuthorizationResponseReceived(AuthorizationResponseReceivedContext context)
-        {
-            return base.AuthorizationResponseReceived(context);
-        }
+        //public override Task AuthorizationResponseReceived(AuthorizationResponseReceivedContext context)
+        //{
+        //    return base.AuthorizationResponseReceived(context);
+        //}
 
         public override Task TicketReceived(TicketReceivedContext context)
         {
@@ -284,20 +290,20 @@ namespace Tailspin.Surveys.Web.Security
             return base.UserInformationReceived(context);
         }
 
-        public override Task RemoteError(ErrorContext context)
-        {
-            return base.RemoteError(context);
-        }
+        //public override Task RemoteError(ErrorContext context)
+        //{
+        //    return base.RemoteError(context);
+        //}
 
         public override Task MessageReceived(MessageReceivedContext context)
         {
             return base.MessageReceived(context);
         }
 
-        public override Task RedirectToEndSessionEndpoint(RedirectContext context)
-        {
-            return base.RedirectToEndSessionEndpoint(context);
-        }
+        //public override Task RedirectToEndSessionEndpoint(RedirectContext context)
+        //{
+        //    return base.RedirectToEndSessionEndpoint(context);
+        //}
         // ReSharper restore RedundantOverridenMember
     }
 }

@@ -4,11 +4,11 @@
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNet.Authorization;
-using Microsoft.AspNet.Http;
-using Microsoft.AspNet.Mvc;
-using Microsoft.AspNet.Mvc.Abstractions;
-using Microsoft.AspNet.Routing;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.Routing;
 using Moq;
 using Tailspin.Surveys.Data.DataModels;
 using Tailspin.Surveys.Data.DataStore;
@@ -44,7 +44,7 @@ namespace MultiTentantSurveyAppTests
             _surveyStore.Setup(s => s.GetSurveysByContributorAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
                 .ReturnsAsync(new List<Survey>());
 
-            _target.ActionContext = CreateActionContextWithUserPrincipal("12345", "testTenantId");
+            _target.ControllerContext = CreateActionContextWithUserPrincipal("12345", "testTenantId");
             var result = await _target.GetSurveysForUser(12345);
 
             var objectResult = (ObjectResult) result;
@@ -54,10 +54,10 @@ namespace MultiTentantSurveyAppTests
         [Fact]
         public async Task GetSurveysForUser_FailsIfNotUser()
         {
-            _target.ActionContext = CreateActionContextWithUserPrincipal("00000", "testTenantId");
+            _target.ControllerContext = CreateActionContextWithUserPrincipal("00000", "testTenantId");
             var result = await _target.GetSurveysForUser(12345);
 
-            var statusCodeResult = (HttpStatusCodeResult)result;
+            var statusCodeResult = (StatusCodeResult)result;
             Assert.Equal(403, statusCodeResult.StatusCode);
         }
 
@@ -69,7 +69,7 @@ namespace MultiTentantSurveyAppTests
             _surveyStore.Setup(s => s.GetUnPublishedSurveysByTenantAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()))
                 .ReturnsAsync(new List<Survey>());
 
-            _target.ActionContext = CreateActionContextWithUserPrincipal("12345", "12345");
+            _target.ControllerContext = CreateActionContextWithUserPrincipal("12345", "12345");
             var result = await _target.GetSurveysForTenant(12345);
 
             var objectResult = (ObjectResult)result;
@@ -79,14 +79,14 @@ namespace MultiTentantSurveyAppTests
         [Fact]
         public async Task GetSurveysForTenant_FailsIfNotInSameTenant()
         {
-            _target.ActionContext = CreateActionContextWithUserPrincipal("12345", "54321");
+            _target.ControllerContext = CreateActionContextWithUserPrincipal("12345", "54321");
             var result = await _target.GetSurveysForTenant(12345);
 
-            var statusCodeResult = (HttpStatusCodeResult)result;
+            var statusCodeResult = (StatusCodeResult)result;
             Assert.Equal(403, statusCodeResult.StatusCode);
         }
 
-        private ActionContext CreateActionContextWithUserPrincipal(string userId, string tenantId)
+        private ControllerContext CreateActionContextWithUserPrincipal(string userId, string tenantId)
         {
             var httpContext = new Mock<HttpContext>();
             var routeData = new Mock<RouteData>();
@@ -98,7 +98,7 @@ namespace MultiTentantSurveyAppTests
 
             }));
             httpContext.SetupGet(c => c.User).Returns(principal);
-            return new ActionContext(httpContext.Object, routeData.Object, actionDescriptor.Object);
+            return new ControllerContext(new ActionContext(httpContext.Object, routeData.Object, actionDescriptor.Object));
         }
     }
 }

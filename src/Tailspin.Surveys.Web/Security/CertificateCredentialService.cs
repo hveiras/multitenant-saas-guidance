@@ -5,7 +5,7 @@ using System;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
-using Microsoft.Extensions.OptionsModel;
+using Microsoft.Extensions.Options;
 using Tailspin.Surveys.Common;
 using Tailspin.Surveys.Web.Configuration;
 

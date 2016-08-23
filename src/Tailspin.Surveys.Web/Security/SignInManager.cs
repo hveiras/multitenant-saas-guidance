@@ -5,11 +5,11 @@ using System;
 using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNet.Authentication.Cookies;
-using Microsoft.AspNet.Authentication.OpenIdConnect;
-using Microsoft.AspNet.Http;
-using Microsoft.AspNet.Http.Authentication;
-using Microsoft.AspNet.Mvc;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Authentication;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Tailspin.Surveys.Web.Logging;
 
@@ -62,7 +62,7 @@ namespace Tailspin.Surveys.Web.Security
             catch (Exception exp)
             {
                 _logger.SignoutFailed(userObjectIdentifier, issuer, exp);
-                return new HttpStatusCodeResult((int)HttpStatusCode.InternalServerError);
+                return new StatusCodeResult(500);
             }
 
             return new EmptyResult();

@@ -25,11 +25,15 @@ namespace Tailspin.Surveys.TokenStorage
         }
         public static void TokensRetrievedFromStore(this ILogger logger, string key)
         {
-            logger.LogVerbose("Retrieved all tokens from store for Key: {0}", key);
+            //https://github.com/aspnet/Logging/commit/7a05d121d6c120a15d5a2178e3e45d7c400d22c0
+            //logger.LogVerbose("Retrieved all tokens from store for Key: {0}", key);
+            logger.LogTrace("Retrieved all tokens from store for Key: {0}", key);
         }
         public static void TokensWrittenToStore(this ILogger logger, string clientId, string userId, string resource)
         {
-            logger.LogVerbose("Token states changed for Client: {0} User: {1}  Resource: {2} writing all tokens back to store", clientId, userId, resource);
+            //https://github.com/aspnet/Logging/commit/7a05d121d6c120a15d5a2178e3e45d7c400d22c0
+            //logger.LogVerbose("Token states changed for Client: {0} User: {1}  Resource: {2} writing all tokens back to store", clientId, userId, resource);
+            logger.LogTrace("Token states changed for Client: {0} User: {1}  Resource: {2} writing all tokens back to store", clientId, userId, resource);
         }
     }
 }

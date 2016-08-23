@@ -4,6 +4,9 @@
 /src/Tailspin.Surveys.Web/node_modules
 /src/Tailspin.Surveys.Web/wwwroot/lib
 
+bin/
+obj/
+
 *.user
 *.publishproj
 

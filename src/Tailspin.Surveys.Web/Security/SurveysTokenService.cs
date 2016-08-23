@@ -5,7 +5,7 @@ using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.OptionsModel;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Tailspin.Surveys.Common;
 using Tailspin.Surveys.Common.Configuration;

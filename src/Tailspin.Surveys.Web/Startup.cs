@@ -4,14 +4,13 @@
 using System;
 using System.Globalization;
 using System.IdentityModel.Tokens;
-using Microsoft.AspNet.Authentication.Cookies;
-using Microsoft.AspNet.Builder;
-using Microsoft.AspNet.Hosting;
-using Microsoft.Data.Entity;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.OptionsModel;
 using Tailspin.Surveys.Data.DataModels;
 using Tailspin.Surveys.Web.Security;
 using Tailspin.Surveys.Security.Policy;
@@ -22,6 +21,9 @@ using Microsoft.Extensions.PlatformAbstractions;
 using System.Threading.Tasks;
 using Tailspin.Surveys.Common;
 using Tailspin.Surveys.TokenStorage;
+using System.IO;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.Extensions.Options;
 
 namespace Tailspin.Surveys.Web
 {
@@ -29,7 +31,7 @@ namespace Tailspin.Surveys.Web
     {
         private readonly IConfiguration _configuration;
 
-        public Startup(IHostingEnvironment env, IApplicationEnvironment appEnv, ILoggerFactory loggerFactory)
+        public Startup(IHostingEnvironment env, ApplicationEnvironment appEnv, ILoggerFactory loggerFactory)
         {
             InitializeLogging(loggerFactory);
 
@@ -50,7 +52,7 @@ namespace Tailspin.Surveys.Web
 
             // Uncomment the block of code below if you want to load secrets from KeyVault
             // It is recommended to use certs for all authentication when using KeyVault
-//#if DNX451
+//#if NET451
 //            _configuration = builder.Build();
 //            builder.AddKeyVaultSecrets(_configuration["AzureAd:ClientId"],
 //                _configuration["KeyVault:Name"],
@@ -59,30 +61,32 @@ namespace Tailspin.Surveys.Web
 //                loggerFactory);
 //#endif
 
-            _configuration = builder.Build();
+            Configuration = builder.Build();
         }
+
+        public IConfigurationRoot Configuration { get; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
             var configOptions = new SurveyAppConfiguration.ConfigurationOptions();
-            _configuration.Bind(configOptions);
+            //Configuration.Bind(configOptions);
 
             var adOptions = configOptions.AzureAd;
-            services.Configure<SurveyAppConfiguration.ConfigurationOptions>(_configuration);
+            services.Configure<SurveyAppConfiguration.ConfigurationOptions>(co => {
+                co = configOptions;
+            });
 
-#if DNX451
+#if NET451
             // This will add the Redis implementation of IDistributedCache
-            services.AddRedisCache();
-            services.Configure<Microsoft.Extensions.Caching.Redis.RedisCacheOptions>(options =>
-            {
-                options.Configuration = configOptions.Redis.Configuration;
+            services.AddDistributedRedisCache(setup => {
+                setup.Configuration = configOptions.Redis.Configuration;
             });
 #endif
 
             // This will only add the LocalCache implementation of IDistributedCache if there is not an IDistributedCache already registered.
-            services.AddCaching();
-
+            services.AddDistributedMemoryCache();
+            
             services.AddAuthorization(options =>
             {
                 options.AddPolicy(PolicyNames.RequireSurveyCreator,
@@ -107,9 +111,8 @@ namespace Tailspin.Surveys.Web
             });
 
             // Add Entity Framework services to the services container.
-            services.AddEntityFramework()
-                .AddSqlServer()
-                .AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(configOptions.Data.SurveysConnectionString));
+            services.AddEntityFrameworkSqlServer()
+                .AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(Configuration.GetSection("Data")["SurveysConnectionString"]));
 
             // Add MVC services to the services container.
             services.AddMvc();
@@ -146,10 +149,7 @@ namespace Tailspin.Surveys.Web
             {
                 //app.UseBrowserLink();
                 app.UseDeveloperExceptionPage();
-                app.UseDatabaseErrorPage(options =>
-                {
-                    options.ShowExceptionDetails = true;
-                });
+                app.UseDatabaseErrorPage();
             }
             else
             {
@@ -159,35 +159,34 @@ namespace Tailspin.Surveys.Web
             }
 
             // Add the platform handler to the request pipeline.
-            app.UseIISPlatformHandler();
+            // https://github.com/aspnet/Announcements/issues/164
+            //app.UseIISPlatformHandler();
 
             // Add static files to the request pipeline.
             app.UseStaticFiles();
 
             // Add cookie-based authentication to the request pipeline.
-            app.UseCookieAuthentication(options =>
-            {
-                options.AutomaticAuthenticate = true;
-                options.AutomaticChallenge = true;
-                options.AccessDeniedPath = "/Home/Forbidden";
-                options.CookieSecure = CookieSecureOption.Always;
+            app.UseCookieAuthentication(new CookieAuthenticationOptions {
+                AutomaticAuthenticate = true,
+                AutomaticChallenge = true,
+                AccessDeniedPath = "/Home/Forbidden",
+                CookieSecure = Microsoft.AspNetCore.Http.CookieSecurePolicy.Always,
 
                 // The default setting for cookie expiration is 14 days. SlidingExpiration is set to true by default
-                options.ExpireTimeSpan = TimeSpan.FromHours(1);
-                options.SlidingExpiration = true;
+                ExpireTimeSpan = TimeSpan.FromHours(1),
+                SlidingExpiration = true
             });
 
             // Add OpenIdConnect middleware so you can login using Azure AD.
-            app.UseOpenIdConnectAuthentication(options =>
-            {
-                options.AutomaticAuthenticate = true;
-                options.AutomaticChallenge = true;
-                options.ClientId = configOptions.AzureAd.ClientId;
-                options.Authority = Constants.AuthEndpointPrefix + "common/";
-                options.PostLogoutRedirectUri = configOptions.AzureAd.PostLogoutRedirectUri;
-                options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                options.TokenValidationParameters = new TokenValidationParameters { ValidateIssuer = false };
-                options.Events = new SurveyAuthenticationEvents(configOptions.AzureAd, loggerFactory);
+            app.UseOpenIdConnectAuthentication(new OpenIdConnectOptions {
+                AutomaticAuthenticate = true,
+                AutomaticChallenge = true,
+                ClientId = configOptions.AzureAd.ClientId,
+                Authority = Constants.AuthEndpointPrefix + "common/",
+                PostLogoutRedirectUri = configOptions.AzureAd.PostLogoutRedirectUri,
+                SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme,
+                TokenValidationParameters = new TokenValidationParameters { ValidateIssuer = false },
+                Events = new SurveyAuthenticationEvents(configOptions.AzureAd, loggerFactory)
             });
 
             // Add MVC to the request pipeline.
@@ -204,9 +203,22 @@ namespace Tailspin.Surveys.Web
 
         private void InitializeLogging(ILoggerFactory loggerFactory)
         {
-            loggerFactory.MinimumLevel = LogLevel.Information;
+            //https://github.com/aspnet/Logging/commit/1308245d2c470fcf437299331b8175e2e417af04
+            //loggerFactory.MinimumLevel = LogLevel.Information;
+
             loggerFactory.AddDebug(LogLevel.Information);
         }
 
+        public static void Main(string[] args)
+        {
+            var host = new WebHostBuilder()
+                .UseKestrel()
+                .UseContentRoot(Directory.GetCurrentDirectory())
+                .UseIISIntegration()
+                .UseStartup<Startup>()
+                .Build();
+
+            host.Run();
+        }
     }
 }

@@ -4,12 +4,12 @@
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNet.Authorization;
-using Microsoft.AspNet.Http;
-using Microsoft.AspNet.Mvc;
-using Microsoft.AspNet.Mvc.Abstractions;
-using Microsoft.AspNet.Routing;
-using Microsoft.Data.Entity;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Abstractions;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -37,8 +37,7 @@ namespace MultiTentantSurveyAppTests
             _authorizationService = new Mock<IAuthorizationService>();
 
             var services = new ServiceCollection();
-            services.AddEntityFramework()
-                .AddInMemoryDatabase()
+            services.AddEntityFrameworkInMemoryDatabase()
                 .AddDbContext<ApplicationDbContext>(options => options.UseInMemoryDatabase());
 
             _target = new SurveyController(_surveyService.Object, _logger.Object, _authorizationService.Object);
@@ -53,7 +52,7 @@ namespace MultiTentantSurveyAppTests
             _surveyService.Setup(s => s.GetSurveysForUserAsync(54321))
                 .ReturnsAsync(apiResultUserSurveys.Object);
 
-            _target.ActionContext = CreateActionContextWithUserPrincipal("54321", "unregistereduser@contoso.com");
+            _target.ControllerContext = CreateActionContextWithUserPrincipal("54321", "unregistereduser@contoso.com");
             var result = await _target.Index();
             var view = (ViewResult)result;
             Assert.Same(view.ViewData.Model, apiResultUserSurveys.Object.Item);
@@ -117,7 +116,7 @@ namespace MultiTentantSurveyAppTests
             _surveyService.Setup(s => s.ProcessPendingContributorRequestsAsync())
                 .Callback(() => surveyContributorProcessed = true);
 
-            _target.ActionContext = CreateActionContextWithUserPrincipal("54321", "unregistereduser@contoso.com");
+            _target.ControllerContext = CreateActionContextWithUserPrincipal("54321", "unregistereduser@contoso.com");
             var result = await _target.Index();
 
             Assert.True(surveyContributorProcessed);
@@ -125,7 +124,7 @@ namespace MultiTentantSurveyAppTests
 
         #region Helpers
 
-        private ActionContext CreateActionContextWithUserPrincipal(string userId, string emailAddress)
+        private ControllerContext CreateActionContextWithUserPrincipal(string userId, string emailAddress)
         {
             var httpContext = new Mock<HttpContext>();
             var routeData = new Mock<RouteData>();
@@ -140,7 +139,7 @@ namespace MultiTentantSurveyAppTests
 
             }));
             httpContext.SetupGet(c => c.User).Returns(principal);
-            return new ActionContext(httpContext.Object, routeData.Object, actionDescriptor.Object);
+            return new ControllerContext(new ActionContext(httpContext.Object, routeData.Object, actionDescriptor.Object));
         }
 
         #endregion
