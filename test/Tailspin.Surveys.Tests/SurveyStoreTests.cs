@@ -19,22 +19,6 @@ namespace Tailspin.Surveys.Tests
 
     public class SurveyStoreTests
     {
-        //private readonly ServiceCollection _serviceCollection;
-        //private readonly DbContextOptions<ApplicationDbContext> _options;
-
-        //public SurveyStoreTests()
-        //{
-        //    var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-        //    optionsBuilder.UseInMemoryDatabase();
-        //    _options = optionsBuilder.Options;
-
-        //    _serviceCollection = new ServiceCollection();
-        //    _serviceCollection
-        //        .AddEntityFrameworkInMemoryDatabase();
-        //    _serviceCollection.AddTransient<ApplicationDbContext>(provider => new ApplicationDbContext(_options));
-        //    _serviceCollection.AddTransient<SqlServerSurveyStore>();
-        //}
-
         // FROM: https://docs.efproject.net/en/latest/miscellaneous/testing.html Revision 50e38b00
         private static DbContextOptions<ApplicationDbContext> CreateNewContextOptions()
         {
