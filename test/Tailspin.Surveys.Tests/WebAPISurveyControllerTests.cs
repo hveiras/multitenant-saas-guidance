@@ -16,6 +16,7 @@ using Tailspin.Surveys.Data.DTOs;
 using Tailspin.Surveys.Security;
 using Tailspin.Surveys.WebAPI.Controllers;
 using Xunit;
+using Microsoft.AspNetCore.Mvc.Controllers;
 
 namespace MultiTentantSurveyAppTests
 {
@@ -81,7 +82,7 @@ namespace MultiTentantSurveyAppTests
         {
             _target.ControllerContext = CreateActionContextWithUserPrincipal("12345", "54321");
             var result = await _target.GetSurveysForTenant(12345);
-
+            
             var statusCodeResult = (StatusCodeResult)result;
             Assert.Equal(403, statusCodeResult.StatusCode);
         }
@@ -90,7 +91,7 @@ namespace MultiTentantSurveyAppTests
         {
             var httpContext = new Mock<HttpContext>();
             var routeData = new Mock<RouteData>();
-            var actionDescriptor = new Mock<ActionDescriptor>();
+            var controllerActionDescriptor = new Mock<ControllerActionDescriptor>();
             var principal = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
             {
                 new Claim(SurveyClaimTypes.SurveyUserIdClaimType, userId),
@@ -98,7 +99,12 @@ namespace MultiTentantSurveyAppTests
 
             }));
             httpContext.SetupGet(c => c.User).Returns(principal);
-            return new ControllerContext(new ActionContext(httpContext.Object, routeData.Object, actionDescriptor.Object));
+
+            return new ControllerContext(
+                new ActionContext(
+                    httpContext.Object,
+                    routeData.Object,
+                    controllerActionDescriptor.Object));
         }
     }
 }

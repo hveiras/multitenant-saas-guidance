@@ -20,6 +20,7 @@ using Tailspin.Surveys.Security;
 using Tailspin.Surveys.Web.Controllers;
 using Tailspin.Surveys.Web.Models;
 using Tailspin.Surveys.Web.Services;
+using Microsoft.AspNetCore.Mvc.Controllers;
 
 namespace MultiTentantSurveyAppTests
 {
@@ -128,7 +129,7 @@ namespace MultiTentantSurveyAppTests
         {
             var httpContext = new Mock<HttpContext>();
             var routeData = new Mock<RouteData>();
-            var actionDescriptor = new Mock<ActionDescriptor>();
+            var controllerActionDescriptor = new Mock<ControllerActionDescriptor>();
             var principal = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
             {
                 new Claim(SurveyClaimTypes.SurveyUserIdClaimType, userId),
@@ -139,7 +140,12 @@ namespace MultiTentantSurveyAppTests
 
             }));
             httpContext.SetupGet(c => c.User).Returns(principal);
-            return new ControllerContext(new ActionContext(httpContext.Object, routeData.Object, actionDescriptor.Object));
+
+            return new ControllerContext(
+                new ActionContext(
+                    httpContext.Object,
+                    routeData.Object,
+                    controllerActionDescriptor.Object));
         }
 
         #endregion

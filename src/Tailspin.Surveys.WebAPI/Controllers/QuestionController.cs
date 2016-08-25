@@ -47,7 +47,7 @@ namespace Tailspin.Surveys.WebAPI.Controllers
 
             if (!await _authorizationService.AuthorizeAsync(User, question.Survey, Operations.Update))
             {
-                return Forbid();
+                return new StatusCodeResult(403);
             }
 
             return new ObjectResult(DataMapping._questionToDto(question));
@@ -88,7 +88,7 @@ namespace Tailspin.Surveys.WebAPI.Controllers
             // The AuthorizationService uses the policies in the Tailspin.Surveys.Security project
             if (!await _authorizationService.AuthorizeAsync(User, survey, Operations.Update))
             {
-                return Forbid();
+                return new StatusCodeResult(403);
             }
 
 
@@ -122,7 +122,7 @@ namespace Tailspin.Surveys.WebAPI.Controllers
 
             if (!await _authorizationService.AuthorizeAsync(User, question.Survey, Operations.Update))
             {
-                return Forbid();
+                return new StatusCodeResult(403);
             }
 
 
@@ -154,7 +154,7 @@ namespace Tailspin.Surveys.WebAPI.Controllers
 
             if (!await _authorizationService.AuthorizeAsync(User, question.Survey, Operations.Update))
             {
-                return Forbid();
+                return new StatusCodeResult(403);
             }
 
             await _questionStore.DeleteQuestionAsync(question);

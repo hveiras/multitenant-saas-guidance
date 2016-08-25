@@ -59,7 +59,7 @@ namespace Tailspin.Surveys.Web.Controllers
                 var userId = User.GetSurveyUserIdValue();
                 var user = User.GetObjectIdentifierValue();
                 var issuerValue = User.GetIssuerValue();
-                var actionName = new ActionContext().ActionDescriptor.DisplayName;
+                var actionName = ControllerContext.ActionDescriptor.DisplayName;
                 _logger.GetSurveysForUserOperationStarted(actionName, user, issuerValue);
 
                 // The SurveyService.GetSurveysForUserAsync returns a UserSurveysDTO that has properties for Published, Own, and Contribute

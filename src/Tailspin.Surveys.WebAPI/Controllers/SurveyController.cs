@@ -50,7 +50,7 @@ namespace Tailspin.Surveys.WebAPI.Controllers
             // The AuthorizationService uses the policies in the Tailspin.Surveys.Security project
             if (!await _authorizationService.AuthorizeAsync(User, survey, Operations.Read))
             {
-                return Forbid();
+                return new StatusCodeResult(403);
             }
             return new ObjectResult(DataMapping._surveyToDto(survey));
         }
@@ -65,7 +65,7 @@ namespace Tailspin.Surveys.WebAPI.Controllers
         {
             if (User.GetSurveyUserIdValue() != userId)
             {
-                return Forbid();
+                return new StatusCodeResult(403);
             }
 
             var surveys = new UserSurveysDTO();
@@ -86,7 +86,7 @@ namespace Tailspin.Surveys.WebAPI.Controllers
         {
             if (User.GetSurveyTenantIdValue() != tenantId)
             {
-                return Forbid();
+                return new StatusCodeResult(403);
             }
 
             var surveys = new TenantSurveysDTO();
@@ -124,7 +124,7 @@ namespace Tailspin.Surveys.WebAPI.Controllers
             // Validate that the current user has Read permissions to this survey.
             if (!await _authorizationService.AuthorizeAsync(User, survey, Operations.Read))
             {
-                return Forbid();
+                return new StatusCodeResult(403);
             }
 
             return new ObjectResult(new ContributorsDTO()
@@ -192,7 +192,7 @@ namespace Tailspin.Surveys.WebAPI.Controllers
             // Validate that the current user has Update permissions to this survey.
             if (!await _authorizationService.AuthorizeAsync(User, survey, Operations.Update))
             {
-                return Forbid();
+                return new StatusCodeResult(403);
             }
 
             // Apply update
@@ -220,7 +220,7 @@ namespace Tailspin.Surveys.WebAPI.Controllers
             // Validate that the current user has Delete permissions to this survey.
             if (!await _authorizationService.AuthorizeAsync(User, survey, Operations.Delete))
             {
-                return Forbid();
+                return new StatusCodeResult(403);
             }
 
             await _surveyStore.DeleteSurveyAsync(survey);
@@ -255,7 +255,7 @@ namespace Tailspin.Surveys.WebAPI.Controllers
             // Validate that the current user has Update permissions to this survey.
             if (!await _authorizationService.AuthorizeAsync(User, survey, Operations.Update))
             {
-                return Forbid();
+                return new StatusCodeResult(403);
             }
 
             await _contributorRequestStore.AddRequestAsync(item);
@@ -311,7 +311,7 @@ namespace Tailspin.Surveys.WebAPI.Controllers
             // Validate that the current user has Publish permissions to this survey.
             if (!await _authorizationService.AuthorizeAsync(User, survey, Operations.Publish))
             {
-                return Forbid();
+                return new StatusCodeResult(403);
             }
 
             var published = await _surveyStore.PublishSurveyAsync(id);
@@ -336,7 +336,7 @@ namespace Tailspin.Surveys.WebAPI.Controllers
             // Validate that the current user has UnPublish permissions to this survey.
             if (!await _authorizationService.AuthorizeAsync(User, survey, Operations.UnPublish))
             {
-                return Forbid();
+                return new StatusCodeResult(403);
             }
 
             var unpublished = await _surveyStore.UnPublishSurveyAsync(id);
