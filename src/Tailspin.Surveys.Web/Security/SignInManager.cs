@@ -26,7 +26,7 @@ namespace Tailspin.Surveys.Web.Security
         /// <summary>
         /// Initializes a new instance of <see cref="Tailspin.Surveys.Web.Security.SignInManager"/>;
         /// </summary>
-        /// <param name="contextAccessor">An instance of <see cref="Microsoft.AspNet.Http.IHttpContextAccessor"/> used to get access to the current HTTP context.</param>
+        /// <param name="contextAccessor">An instance of <see cref="Microsoft.AspNetCore.Http.IHttpContextAccessor"/> used to get access to the current HTTP context.</param>
         /// <param name="surveysTokenService">An instance of <see cref="Tailspin.Surveys.Web.Security.ISurveysTokenService"/></param>
         /// <param name="logger">An <see cref="Microsoft.Extensions.Logging.ILogger"/> implementation used for diagnostic information.</param>
         public SignInManager(IHttpContextAccessor contextAccessor,
@@ -42,7 +42,7 @@ namespace Tailspin.Surveys.Web.Security
         /// Signs the currently signed in principal out of all authentication schemes and clears any access tokens from the token cache.
         /// </summary>
         /// <param name="redirectUrl">A Url to which the user should be redirected when sign out of AAD completes.</param>
-        /// <returns>A <see cref="System.Threading.Tasks.Task{Microsoft.AspNet.Mvc.IActionResult}"/> implementation.</returns>
+        /// <returns>A <see cref="System.Threading.Tasks.Task{Microsoft.AspNetCore.Mvc.IActionResult}"/> implementation.</returns>
         public async Task<IActionResult> SignOutAsync(string redirectUrl = null)
         {
             var userObjectIdentifier = _httpContext.User.GetObjectIdentifierValue();

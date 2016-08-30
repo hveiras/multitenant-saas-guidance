@@ -21,9 +21,9 @@ namespace Tailspin.Surveys.TokenStorage
         /// <summary>
         /// Initializes a new instance of <see cref="Tailspin.Surveys.TokenStorage.DistributedTokenCacheService"/>
         /// </summary>
-        /// <param name="contextAccessor">An instance of <see cref="Microsoft.AspNet.Http.IHttpContextAccessor"/> used to get access to the current HTTP context.</param>
+        /// <param name="contextAccessor">An instance of <see cref="Microsoft.AspNetCore.Http.IHttpContextAccessor"/> used to get access to the current HTTP context.</param>
         /// <param name="loggerFactory"><see cref="Microsoft.Extensions.Logging.ILoggerFactory"/> used to create type-specific <see cref="Microsoft.Extensions.Logging.ILogger"/> instances.</param>
-        /// <param name="dataProtectionProvider">An <see cref="Microsoft.AspNet.DataProtection.IDataProtectionProvider"/> for creating a data protector.</param>
+        /// <param name="dataProtectionProvider">An <see cref="Microsoft.AspNetCore.DataProtection.IDataProtectionProvider"/> for creating a data protector.</param>
         public DistributedTokenCacheService(
             IDistributedCache distributedCache,
             IHttpContextAccessor contextAccessor,

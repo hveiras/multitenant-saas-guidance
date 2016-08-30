@@ -22,7 +22,8 @@
     "Tailspin.Surveys.Common": "1.0.0-*",
     "Tailspin.Surveys.Security": "1.0.0-*",
     "Microsoft.AspNetCore.Server.IISIntegration": "1.0.0",
-    "Microsoft.Extensions.Configuration.CommandLine": "1.0.0"
+    "Microsoft.Extensions.Configuration.CommandLine": "1.0.0",
+    "Microsoft.Extensions.Configuration.Binder": "1.0.0"
   },
 
   "tools": {

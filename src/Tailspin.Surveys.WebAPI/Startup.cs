@@ -14,7 +14,6 @@ using Tailspin.Surveys.Data.DataStore;
 using Tailspin.Surveys.Security.Policy;
 using AppConfiguration = Tailspin.Surveys.WebAPI.Configuration;
 using Constants = Tailspin.Surveys.Common.Constants;
-using Microsoft.Extensions.PlatformAbstractions;
 
 namespace Tailspin.Surveys.WebAPI
 {
@@ -23,8 +22,6 @@ namespace Tailspin.Surveys.WebAPI
     /// </summary>
     public class Startup
     {
-        private AppConfiguration.ConfigurationOptions _configOptions = new AppConfiguration.ConfigurationOptions();
-
         public Startup(IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
             InitializeLogging(loggerFactory);
@@ -100,24 +97,19 @@ namespace Tailspin.Surveys.WebAPI
         // Configure is called after ConfigureServices is called.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ApplicationDbContext dbContext, ILoggerFactory loggerFactory)
         {
+            var configOptions = new AppConfiguration.ConfigurationOptions();
+            Configuration.Bind(configOptions);
+
             if (env.IsDevelopment())
             {
-                //app.UseBrowserLink();
                 app.UseDeveloperExceptionPage();
 
                 app.UseDatabaseErrorPage();
-                //app.UseDatabaseErrorPage(options =>
-                //{
-                //    options.ShowExceptionDetails = true;
-                //});
             }
-
-            // https://github.com/aspnet/Announcements/issues/164
-            //app.UseIISPlatformHandler();
 
             app.UseJwtBearerAuthentication(new JwtBearerOptions {
                 //
-                Audience = _configOptions.AzureAd.WebApiResourceId,
+                Audience = configOptions.AzureAd.WebApiResourceId,
                 //
                 Authority = Constants.AuthEndpointPrefix,
                 TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters {
@@ -125,17 +117,7 @@ namespace Tailspin.Surveys.WebAPI
                 },
                 Events= new SurveysJwtBearerEvents(loggerFactory.CreateLogger<SurveysJwtBearerEvents>())
             });
-            //app.UseJwtBearerAuthentication(options =>
-            //{
-            //    options.Audience = _configOptions.AzureAd.WebApiResourceId;
-            //    options.Authority = Constants.AuthEndpointPrefix + "common/";
-            //    options.TokenValidationParameters = new TokenValidationParameters
-            //    {
-            //        //Instead of validating against a fixed set of known issuers, we perform custom multi-tenant validation logic
-            //        ValidateIssuer = false,
-            //    };
-            //    options.Events = new SurveysJwtBearerEvents(loggerFactory.CreateLogger<SurveysJwtBearerEvents>());
-            //});
+            
             // Add MVC to the request pipeline.
             app.UseMvc();
         }

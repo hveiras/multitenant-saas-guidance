@@ -42,7 +42,7 @@ namespace Tailspin.Surveys.Web.Security
         /// Called prior to the OIDC middleware redirecting to the authentication endpoint.  In the event we are signing up a tenant, we need to
         /// put the "admin_consent" value for the prompt query string parameter.  AAD uses this to show the admin consent flow.
         /// </summary>
-        /// <param name="context">The <see cref="Microsoft.AspNet.Authentication.OpenIdConnect.RedirectContext"/> for this event.</param>
+        /// <param name="context">The <see cref="Microsoft.AspNetCore.Authentication.OpenIdConnect.RedirectContext"/> for this event.</param>
         /// <returns>A completed <see cref="System.Threading.Tasks.Task"/></returns>
         public override Task RedirectToIdentityProvider(RedirectContext context)
         {
@@ -182,7 +182,7 @@ namespace Tailspin.Surveys.Web.Security
         /// Method that is called by the OIDC middleware after the authentication data has been validated.  This is where most of the sign up
         /// and sign in work is done.
         /// </summary>
-        /// <param name="context">An OIDC-supplied <see cref="Microsoft.AspNet.Authentication.OpenIdConnect.AuthenticationValidatedContext"/> containing the current authentication information.</param>
+        /// <param name="context">An OIDC-supplied <see cref="Microsoft.AspNetCore.Authentication.OpenIdConnect.AuthenticationValidatedContext"/> containing the current authentication information.</param>
         /// <returns>a completed <see cref="System.Threading.Tasks.Task"/></returns>
         public override async Task TokenValidated(TokenValidatedContext context)
         {
@@ -233,7 +233,7 @@ namespace Tailspin.Surveys.Web.Security
         /// <summary>
         /// Called by the OIDC middleware when authentication fails.
         /// </summary>
-        /// <param name="context">An OIDC-middleware supplied <see cref="Microsoft.AspNet.Authentication.OpenIdConnect.AuthenticationFailedContext"/> containing information about the failed authentication.</param>
+        /// <param name="context">An OIDC-middleware supplied <see cref="Microsoft.AspNetCore.Authentication.OpenIdConnect.AuthenticationFailedContext"/> containing information about the failed authentication.</param>
         /// <returns>A completed <see cref="System.Threading.Tasks.Task"/></returns>
         public override Task AuthenticationFailed(AuthenticationFailedContext context)
         {

@@ -26,7 +26,7 @@ namespace Tailspin.Surveys.TokenStorage
         /// <param name="claimsPrincipal">A <see cref="System.Security.Claims.ClaimsPrincipal"/> for the signed in user</param>
         /// <param name="distributedCache">An implementation of <see cref="Microsoft.Extensions.Caching.Distributed.IDistributedCache"/> in which to store the access tokens.</param>
         /// <param name="loggerFactory"><see cref="Microsoft.Extensions.Logging.ILoggerFactory"/> used to create type-specific <see cref="Microsoft.Extensions.Logging.ILogger"/> instances.</param>
-        /// <param name="dataProtectionProvider">An <see cref="Microsoft.AspNet.DataProtection.IDataProtectionProvider"/> for creating a data protector.</param>
+        /// <param name="dataProtectionProvider">An <see cref="Microsoft.AspNetCore.DataProtection.IDataProtectionProvider"/> for creating a data protector.</param>
         public DistributedTokenCache(
             ClaimsPrincipal claimsPrincipal,
             IDistributedCache distributedCache,

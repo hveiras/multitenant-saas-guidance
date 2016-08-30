@@ -15,17 +15,14 @@ using Tailspin.Surveys.Security.Policy;
 using Tailspin.Surveys.Web.Services;
 using Constants = Tailspin.Surveys.Common.Constants;
 using SurveyAppConfiguration = Tailspin.Surveys.Web.Configuration;
-using Microsoft.Extensions.PlatformAbstractions;
 using Tailspin.Surveys.TokenStorage;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Http;
 
 namespace Tailspin.Surveys.Web
 {
     public class Startup
     {
-        //private readonly IConfiguration _configuration;
-
         public Startup(IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
             InitializeLogging(loggerFactory);
@@ -63,15 +60,12 @@ namespace Tailspin.Surveys.Web
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            var configOptions = new SurveyAppConfiguration.ConfigurationOptions();
-            //Configuration.Bind(configOptions);
-
-            var adOptions = configOptions.AzureAd;
-            services.Configure<SurveyAppConfiguration.ConfigurationOptions>(co => {
-                co = configOptions;
-            });
+            services.Configure<SurveyAppConfiguration.ConfigurationOptions>(options => Configuration.Bind(options));
 
 #if NET451
+            var configOptions = new SurveyAppConfiguration.ConfigurationOptions();
+            Configuration.Bind(configOptions);
+
             // This will add the Redis implementation of IDistributedCache
             services.AddDistributedRedisCache(setup => {
                 setup.Configuration = configOptions.Redis.Configuration;
@@ -112,7 +106,7 @@ namespace Tailspin.Surveys.Web
             services.AddMvc();
 
             // Uncomment the following line to add Web API services which makes it easier to port Web API 2 controllers.
-            // You will also need to add the Microsoft.AspNet.Mvc.WebApiCompatShim package to the 'dependencies' section of project.json.
+            // You will also need to add the Microsoft.AspNetCore.Mvc.WebApiCompatShim package to the 'dependencies' section of project.json.
             // services.AddWebApiConventions();
 
             // Register application services.
@@ -124,19 +118,24 @@ namespace Tailspin.Surveys.Web
             services.AddSingleton<HttpClientService>();
 
             // Use this for client certificate support
-            //services.AddSingleton<ICredentialService, CertificateCredentialService>();
             services.AddSingleton<ICredentialService, ClientCredentialService>();
             services.AddScoped<ISurveyService, SurveyService>();
             services.AddScoped<IQuestionService, QuestionService>();
             services.AddScoped<SignInManager, SignInManager>();
             services.AddScoped<TenantManager, TenantManager>();
             services.AddScoped<UserManager, UserManager>();
+            //
+            http://stackoverflow.com/questions/37371264/asp-net-core-rc2-invalidoperationexception-unable-to-resolve-service-for-type/37373557
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            //
         }
 
         // Configure is called after ConfigureServices is called.
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
-            var configOptions = app.ApplicationServices.GetService<IOptions<SurveyAppConfiguration.ConfigurationOptions>>().Value;
+            var configOptions = new SurveyAppConfiguration.ConfigurationOptions();
+            Configuration.Bind(configOptions);
+
             // Configure the HTTP request pipeline.
             // Add the following to the request pipeline only in development environment.
             if (env.IsDevelopment())
@@ -151,10 +150,6 @@ namespace Tailspin.Surveys.Web
                 // sends the request to the following path or controller action.
                 app.UseExceptionHandler("/Home/Error");
             }
-
-            // Add the platform handler to the request pipeline.
-            // https://github.com/aspnet/Announcements/issues/164
-            //app.UseIISPlatformHandler();
 
             // Add static files to the request pipeline.
             app.UseStaticFiles();
