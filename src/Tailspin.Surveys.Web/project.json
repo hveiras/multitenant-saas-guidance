@@ -42,7 +42,8 @@
     "Microsoft.AspNetCore.Server.IISIntegration": "1.0.0",
     "Microsoft.Extensions.Options": "1.0.0",
     "Microsoft.Extensions.Caching.Abstractions": "1.0.0",
-    "Microsoft.Extensions.Caching.Memory": "1.0.0"
+    "Microsoft.Extensions.Caching.Memory": "1.0.0",
+    "Microsoft.Extensions.Configuration.CommandLine": "1.0.0"
   },
 
   "tools": {

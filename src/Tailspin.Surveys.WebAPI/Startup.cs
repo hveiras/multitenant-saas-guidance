@@ -1,14 +1,10 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-using System; //Needed for KeyVaultConfigurationProvider
-using System.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,12 +12,11 @@ using Microsoft.Extensions.Logging;
 using Tailspin.Surveys.Data.DataModels;
 using Tailspin.Surveys.Data.DataStore;
 using Tailspin.Surveys.Security.Policy;
-using AppConfiguration = Tailspin.Surveys.WebApi.Configuration;
+using AppConfiguration = Tailspin.Surveys.WebAPI.Configuration;
 using Constants = Tailspin.Surveys.Common.Constants;
 using Microsoft.Extensions.PlatformAbstractions;
-using System.IO;
 
-namespace Tailspin.Surveys.WebApi
+namespace Tailspin.Surveys.WebAPI
 {
     /// <summary>
     /// This class contains the starup logic for this WebAPI project.
@@ -30,11 +25,11 @@ namespace Tailspin.Surveys.WebApi
     {
         private AppConfiguration.ConfigurationOptions _configOptions = new AppConfiguration.ConfigurationOptions();
 
-        public Startup(IHostingEnvironment env, ApplicationEnvironment appEnv, ILoggerFactory loggerFactory)
+        public Startup(IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
             InitializeLogging(loggerFactory);
             var builder = new ConfigurationBuilder()
-                .SetBasePath(appEnv.ApplicationBasePath)
+                .SetBasePath(env.ContentRootPath)
                 .AddJsonFile("appsettings.json");
 
             if (env.IsDevelopment())
@@ -150,18 +145,6 @@ namespace Tailspin.Surveys.WebApi
             //loggerFactory.MinimumLevel = LogLevel.Information;
 
             loggerFactory.AddDebug(LogLevel.Information);
-        }
-
-        public static void Main(string[] args)
-        {
-            var host = new WebHostBuilder()
-                .UseKestrel()
-                .UseContentRoot(Directory.GetCurrentDirectory())
-                .UseIISIntegration()
-                .UseStartup<Startup>()
-                .Build();
-
-            host.Run();
         }
     }
 }

@@ -13,7 +13,7 @@ using Tailspin.Surveys.Security;
 using Tailspin.Surveys.WebAPI.Logging;
 using Microsoft.IdentityModel.Tokens;
 
-namespace Tailspin.Surveys.WebApi
+namespace Tailspin.Surveys.WebAPI
 {
     /// <summary>
     /// This class extends JwtBearerEvents and provides the logic that is executed at various stages when the Jwt Bearer token is validated.

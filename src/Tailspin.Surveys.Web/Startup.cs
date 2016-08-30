@@ -2,8 +2,6 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Globalization;
-using System.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -18,10 +16,7 @@ using Tailspin.Surveys.Web.Services;
 using Constants = Tailspin.Surveys.Common.Constants;
 using SurveyAppConfiguration = Tailspin.Surveys.Web.Configuration;
 using Microsoft.Extensions.PlatformAbstractions;
-using System.Threading.Tasks;
-using Tailspin.Surveys.Common;
 using Tailspin.Surveys.TokenStorage;
-using System.IO;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
 
@@ -29,15 +24,15 @@ namespace Tailspin.Surveys.Web
 {
     public class Startup
     {
-        private readonly IConfiguration _configuration;
+        //private readonly IConfiguration _configuration;
 
-        public Startup(IHostingEnvironment env, ApplicationEnvironment appEnv, ILoggerFactory loggerFactory)
+        public Startup(IHostingEnvironment env, ILoggerFactory loggerFactory)
         {
             InitializeLogging(loggerFactory);
 
             // Setup configuration sources.
             var builder = new ConfigurationBuilder()
-                .SetBasePath(appEnv.ApplicationBasePath)
+                .SetBasePath(env.ContentRootPath)
                 .AddJsonFile("appsettings.json")
                 .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true);
 
@@ -53,14 +48,13 @@ namespace Tailspin.Surveys.Web
             // Uncomment the block of code below if you want to load secrets from KeyVault
             // It is recommended to use certs for all authentication when using KeyVault
 //#if NET451
-//            _configuration = builder.Build();
-//            builder.AddKeyVaultSecrets(_configuration["AzureAd:ClientId"],
-//                _configuration["KeyVault:Name"],
-//                _configuration["AzureAd:Asymmetric:CertificateThumbprint"],
-//                Convert.ToBoolean(_configuration["AzureAd:Asymmetric:ValidationRequired"]),
+//            Configuration = builder.Build();
+//            builder.AddKeyVaultSecrets(Configuration["AzureAd:ClientId"],
+//                Configuration["KeyVault:Name"],
+//                Configuration["AzureAd:Asymmetric:CertificateThumbprint"],
+//                Convert.ToBoolean(Configuration["AzureAd:Asymmetric:ValidationRequired"]),
 //                loggerFactory);
 //#endif
-
             Configuration = builder.Build();
         }
 
@@ -207,18 +201,6 @@ namespace Tailspin.Surveys.Web
             //loggerFactory.MinimumLevel = LogLevel.Information;
 
             loggerFactory.AddDebug(LogLevel.Information);
-        }
-
-        public static void Main(string[] args)
-        {
-            var host = new WebHostBuilder()
-                .UseKestrel()
-                .UseContentRoot(Directory.GetCurrentDirectory())
-                .UseIISIntegration()
-                .UseStartup<Startup>()
-                .Build();
-
-            host.Run();
         }
     }
 }
