@@ -59,7 +59,7 @@ namespace Tailspin.Surveys.Web.Controllers
         public IActionResult SignUp()
         {
             // Workaround for https://github.com/aspnet/Security/issues/546
-            HttpContext.Items.Add("signup", "true");
+            //HttpContext.Items.Add("signup", "true");
 
             var state = new Dictionary<string, string> { { "signup", "true" }};
             return new ChallengeResult(
