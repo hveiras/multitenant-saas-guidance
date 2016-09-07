@@ -1,4 +1,4 @@
-﻿{
+{
   "version": "1.0.0-*",
   "description": "Tailspin.Surveys.Security Class Library",
   
@@ -16,7 +16,7 @@
         "portable-net45+win8"
       ],
       "dependencies": {
-        "System.Security.Claims": "4.0.1-beta-23409"
+        "System.Security.Claims": "4.0.1"
       }
     }
   }

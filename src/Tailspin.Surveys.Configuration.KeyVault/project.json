@@ -1,8 +1,9 @@
-﻿{
+{
   "version": "1.0.0-*",
   "description": "Tailspin.Surveys.Configuration.KeyVault Class Library",
-  
+
   "dependencies": {
+    "Microsoft.IdentityModel.Clients.ActiveDirectory": "3.13.4",
     "Tailspin.Surveys.Common": "1.0.0-*"
   },
   
@@ -13,7 +14,6 @@
         "System.Threading.Tasks": "4.0.0.0"
       },
       "dependencies": {
-        "Microsoft.IdentityModel.Clients.ActiveDirectory": "3.5.208051316-alpha",
         "Microsoft.Extensions.Configuration.Abstractions": "1.0.0",
         "Microsoft.Extensions.Configuration": "1.0.0",
         "Microsoft.Azure.KeyVault": "1.0.0"

@@ -73,7 +73,7 @@ namespace Tailspin.Surveys.Web
 #endif
 
             // This will only add the LocalCache implementation of IDistributedCache if there is not an IDistributedCache already registered.
-            services.AddDistributedMemoryCache();
+            services.AddMemoryCache();
             
             services.AddAuthorization(options =>
             {

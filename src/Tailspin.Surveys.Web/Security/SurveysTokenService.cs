@@ -69,6 +69,7 @@ namespace Tailspin.Surveys.Web.Security
                 _logger.BearerTokenAcquisitionStarted(resource, userName, issuerValue);
                 var authContext = await CreateAuthenticationContext(user)
                     .ConfigureAwait(false);
+
                 var result = await authContext.AcquireTokenSilentAsync(
                     resource,
                     await _credentialService.GetCredentialsAsync().ConfigureAwait(false),

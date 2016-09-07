@@ -36,7 +36,7 @@
     "Microsoft.VisualStudio.Web.BrowserLink.Loader": "14.0.0",
     "Tailspin.Surveys.Data": "1.0.0-*",
     "Microsoft.AspNetCore.Mvc.ViewFeatures": "1.0.0",
-    "Microsoft.IdentityModel.Clients.ActiveDirectory": "3.5.208051316-alpha",
+    "Microsoft.IdentityModel.Clients.ActiveDirectory": "3.13.4",
     "Tailspin.Surveys.Common": "1.0.0-*",
     "Tailspin.Surveys.Security": "1.0.0-*",
     "Tailspin.Surveys.TokenStorage": "1.0.0-*",
