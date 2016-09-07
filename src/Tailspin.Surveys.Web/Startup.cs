@@ -125,7 +125,7 @@ namespace Tailspin.Surveys.Web
             services.AddScoped<TenantManager, TenantManager>();
             services.AddScoped<UserManager, UserManager>();
             //
-            http://stackoverflow.com/questions/37371264/asp-net-core-rc2-invalidoperationexception-unable-to-resolve-service-for-type/37373557
+            //http://stackoverflow.com/questions/37371264/asp-net-core-rc2-invalidoperationexception-unable-to-resolve-service-for-type/37373557
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             //
         }
