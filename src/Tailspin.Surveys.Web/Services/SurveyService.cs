@@ -55,7 +55,8 @@ namespace Tailspin.Surveys.Web.Services
             var response = await _httpClient.SendRequestWithBearerTokenAsync(HttpMethod.Get, path, null,
                         await _surveysTokenService.GetTokenForWebApiAsync(_httpContextAccessor.HttpContext.User)
                                 .ConfigureAwait(false), _cancellationToken);
-            return await ApiResult<UserSurveysDTO>.FromResponseAsync(response).ConfigureAwait(false);
+            var result = await ApiResult<UserSurveysDTO>.FromResponseAsync(response).ConfigureAwait(false);
+            return result;
         }
 
         public async Task<ApiResult<TenantSurveysDTO>> GetSurveysForTenantAsync(int tenantId)

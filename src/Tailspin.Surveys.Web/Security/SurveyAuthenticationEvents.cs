@@ -16,6 +16,9 @@ using Tailspin.Surveys.Data.DataModels;
 using Tailspin.Surveys.Security;
 using Tailspin.Surveys.Web.Logging;
 using System.Security;
+using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
+using System.Globalization;
 
 namespace Tailspin.Surveys.Web.Security
 {
@@ -244,23 +247,31 @@ namespace Tailspin.Surveys.Web.Security
         public override async Task AuthorizationCodeReceived(AuthorizationCodeReceivedContext context)
         {
             var principal = context.Ticket.Principal;
+
+            //
+            var request = context.HttpContext.Request;
+            var currentUri = UriHelper.BuildAbsolute(request.Scheme, request.Host, request.PathBase, request.Path);
+            var properties = context.Properties;
+
+            //
+
             var surveysTokenService = context.HttpContext.RequestServices.GetService<ISurveysTokenService>();
             try
             {
                 await surveysTokenService.RequestTokenAsync(
                     principal,
                     context.ProtocolMessage.Code,
-                    context.Ticket.Properties.Items[OpenIdConnectDefaults.RedirectUriForCodePropertiesKey],
+                    currentUri,
                     _adOptions.WebApiResourceId)
                     .ConfigureAwait(false);
             }
-            catch
+            catch (Exception ex)
             {
                 // If an exception is thrown within this event, the user is never set on the OWIN middleware,
                 // so there is no need to sign out.  However, the access token could have been put into the
                 // cache so we need to clean it up.
-                await surveysTokenService.ClearCacheAsync(principal)
-                    .ConfigureAwait(false);
+                //await surveysTokenService.ClearCacheAsync(principal)
+                //    .ConfigureAwait(false);
                 throw;
             }
 

@@ -18,6 +18,11 @@ using SurveyAppConfiguration = Tailspin.Surveys.Web.Configuration;
 using Tailspin.Surveys.TokenStorage;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Http;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using System.Globalization;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Http.Extensions;
+using Microsoft.IdentityModel.Clients.ActiveDirectory;
 
 namespace Tailspin.Surveys.Web
 {
@@ -74,7 +79,10 @@ namespace Tailspin.Surveys.Web
 
             // This will only add the LocalCache implementation of IDistributedCache if there is not an IDistributedCache already registered.
             services.AddMemoryCache();
-            
+
+            //services.AddAuthentication(sharedOptions =>
+            //    sharedOptions.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme);
+
             services.AddAuthorization(options =>
             {
                 options.AddPolicy(PolicyNames.RequireSurveyCreator,
@@ -124,10 +132,7 @@ namespace Tailspin.Surveys.Web
             services.AddScoped<SignInManager, SignInManager>();
             services.AddScoped<TenantManager, TenantManager>();
             services.AddScoped<UserManager, UserManager>();
-            //
-            //http://stackoverflow.com/questions/37371264/asp-net-core-rc2-invalidoperationexception-unable-to-resolve-service-for-type/37373557
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-            //
         }
 
         // Configure is called after ConfigureServices is called.
@@ -168,14 +173,15 @@ namespace Tailspin.Surveys.Web
 
             // Add OpenIdConnect middleware so you can login using Azure AD.
             app.UseOpenIdConnectAuthentication(new OpenIdConnectOptions {
-                AutomaticAuthenticate = true,
-                AutomaticChallenge = true,
                 ClientId = configOptions.AzureAd.ClientId,
-                Authority = Constants.AuthEndpointPrefix + "common/",
+                ClientSecret = configOptions.AzureAd.ClientSecret, // for code flow
+                Authority = string.Format(CultureInfo.InvariantCulture, Constants.AuthEndpointPrefix, configOptions.AzureAd.Tenant),
+                //Authority = configOptions.AzureAd.Tenant,
+                ResponseType = OpenIdConnectResponseType.CodeIdToken,
                 PostLogoutRedirectUri = configOptions.AzureAd.PostLogoutRedirectUri,
                 SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme,
                 TokenValidationParameters = new TokenValidationParameters { ValidateIssuer = false },
-                Events = new SurveyAuthenticationEvents(configOptions.AzureAd, loggerFactory)
+                Events = new SurveyAuthenticationEvents(configOptions.AzureAd, loggerFactory),
             });
 
             // Add MVC to the request pipeline.
@@ -192,10 +198,7 @@ namespace Tailspin.Surveys.Web
 
         private void InitializeLogging(ILoggerFactory loggerFactory)
         {
-            //https://github.com/aspnet/Logging/commit/1308245d2c470fcf437299331b8175e2e417af04
-            //loggerFactory.MinimumLevel = LogLevel.Information;
-
-            loggerFactory.AddDebug(LogLevel.Information);
+            loggerFactory.AddDebug(Microsoft.Extensions.Logging.LogLevel.Information);
         }
     }
 }

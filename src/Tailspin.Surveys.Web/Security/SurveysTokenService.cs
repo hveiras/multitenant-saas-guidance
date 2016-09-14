@@ -12,6 +12,8 @@ using Tailspin.Surveys.Common.Configuration;
 using Tailspin.Surveys.TokenStorage;
 using Tailspin.Surveys.Web.Configuration;
 using Tailspin.Surveys.Web.Logging;
+using System.Globalization;
+using Microsoft.AspNetCore.Http.Authentication;
 
 namespace Tailspin.Surveys.Web.Security
 {
@@ -92,7 +94,8 @@ namespace Tailspin.Surveys.Web.Security
             Guard.ArgumentNotNull(claimsPrincipal, nameof(claimsPrincipal));
 
             return new AuthenticationContext(
-               Constants.AuthEndpointPrefix + claimsPrincipal.GetTenantIdValue(),
+                //_adOptions.AadInstance,
+                string.Format(CultureInfo.InvariantCulture, Constants.AuthEndpointPrefix, _adOptions.Tenant),
                 await _tokenCacheService.GetCacheAsync(claimsPrincipal)
                 .ConfigureAwait(false));
         }

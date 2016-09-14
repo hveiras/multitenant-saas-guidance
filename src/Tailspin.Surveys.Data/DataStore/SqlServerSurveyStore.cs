@@ -45,15 +45,24 @@ namespace Tailspin.Surveys.Data.DataStore
 
         public async Task<ICollection<Survey>> GetSurveysByContributorAsync(int userId, int pageIndex = 0, int pageSize = Constants.DefaultPageSize)
         {
-            var cappedPageSize = Math.Min(Constants.MaxPageSize, pageSize);
-            return await _dbContext.SurveyContributors.Include(sc => sc.Survey)
-                                                      .Where(sc => sc.UserId == userId && !sc.Survey.Published)
-                                                      .Select(sc => sc.Survey)
-                                                      .OrderBy(s => s.Id)
-                                                      .Skip(pageIndex * cappedPageSize)
-                                                      .Take(cappedPageSize)
-                                                      .ToArrayAsync()
-                                                      .ConfigureAwait(false);
+            try
+            {
+                var cappedPageSize = Math.Min(Constants.MaxPageSize, pageSize);
+                return await _dbContext.SurveyContributors.Include(sc => sc.Survey)
+                    .Where(sc => sc.UserId == userId && !sc.Survey.Published)
+                    .Select(sc => sc.Survey)
+                    .OrderBy(s => s.Id)
+                    .Skip(pageIndex * cappedPageSize)
+                    .Take(cappedPageSize)
+                    .ToArrayAsync()
+                    .ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
+            }
+            
         }
 
         public async Task<ICollection<Survey>> GetPublishedSurveysByTenantAsync(int tenantId, int pageIndex = 0, int pageSize = Constants.DefaultPageSize)

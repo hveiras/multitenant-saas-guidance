@@ -95,6 +95,11 @@ namespace Tailspin.Surveys.Data.DataModels
                 b.Property(cr => cr.SurveyId)
                     .IsRequired();
             });
+
+            modelBuilder.Entity<SurveyContributor>(b =>
+            {
+                b.ToTable("SurveyContributor");
+            });
         }
 
         public DbSet<Tenant> Tenants { get; set; }

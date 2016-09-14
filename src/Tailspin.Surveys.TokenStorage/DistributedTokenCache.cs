@@ -9,6 +9,8 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Tailspin.Surveys.Common;
+using System.Threading;
+using Microsoft.AspNetCore.Http.Authentication;
 
 namespace Tailspin.Surveys.TokenStorage
 {

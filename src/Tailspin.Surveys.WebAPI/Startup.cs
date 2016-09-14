@@ -5,10 +5,12 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Globalization;
 using Tailspin.Surveys.Data.DataModels;
 using Tailspin.Surveys.Data.DataStore;
 using Tailspin.Surveys.Security.Policy;
@@ -92,6 +94,11 @@ namespace Tailspin.Surveys.WebAPI
                 var loggerFactory = factory.GetService<ILoggerFactory>();
                 return new SurveyAuthorizationHandler(loggerFactory.CreateLogger<SurveyAuthorizationHandler>());
             });
+
+            //
+            //http://stackoverflow.com/questions/37371264/asp-net-core-rc2-invalidoperationexception-unable-to-resolve-service-for-type/37373557
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            //
         }
 
         // Configure is called after ConfigureServices is called.
@@ -108,10 +115,9 @@ namespace Tailspin.Surveys.WebAPI
             }
 
             app.UseJwtBearerAuthentication(new JwtBearerOptions {
-                //
                 Audience = configOptions.AzureAd.WebApiResourceId,
-                //
-                Authority = Constants.AuthEndpointPrefix,
+                //Authority = Constants.AuthEndpointPrefix + "tailspinsurveysample.onmicrosoft.com",
+                Authority = string.Format(CultureInfo.InvariantCulture, Constants.AuthEndpointPrefix, configOptions.AzureAd.Tenant),
                 TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters {
                     ValidateIssuer = false
                 },
@@ -123,9 +129,6 @@ namespace Tailspin.Surveys.WebAPI
         }
         private void InitializeLogging(ILoggerFactory loggerFactory)
         {
-            //https://github.com/aspnet/Logging/commit/1308245d2c470fcf437299331b8175e2e417af04
-            //loggerFactory.MinimumLevel = LogLevel.Information;
-
             loggerFactory.AddDebug(LogLevel.Information);
         }
     }
