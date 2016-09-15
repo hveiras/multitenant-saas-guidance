@@ -3,8 +3,9 @@
 
 using System.Net;
 using System.Threading.Tasks;
-using Microsoft.AspNet.Authorization;
-using Microsoft.AspNet.Mvc;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Tailspin.Surveys.Data.DataModels;
 using Tailspin.Surveys.Data.DataStore;
 using Tailspin.Surveys.Data.DTOs;
@@ -16,7 +17,7 @@ namespace Tailspin.Surveys.WebAPI.Controllers
     /// This class provides a REST based API for the management of questions.
     /// This class uses Bearer token authentication and authorization.
     /// </summary>
-    [Authorize(ActiveAuthenticationSchemes = "Bearer")]
+    [Authorize(ActiveAuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class QuestionController : Controller
     {
         private readonly IQuestionStore _questionStore;
@@ -34,19 +35,19 @@ namespace Tailspin.Surveys.WebAPI.Controllers
         /// This method returns the Question with a matching id property.
         /// </summary>
         /// <param name="id">The id of the Question</param>
-        /// <returns>An <see cref="ObjectResult"/> that contains a <see cref="QuestionDTO"/> if found, otherwise a <see cref="HttpNotFoundResult"/></returns>
+        /// <returns>An <see cref="ObjectResult"/> that contains a <see cref="QuestionDTO"/> if found, otherwise a <see cref="NotFoundResult"/></returns>
         [HttpGet("questions/{id:int}", Name = "GetQuestion")]
         public async Task<IActionResult> Get(int id)
         {
             var question = await _questionStore.GetQuestionAsync(id);
             if (question == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
 
             if (!await _authorizationService.AuthorizeAsync(User, question.Survey, Operations.Update))
             {
-                return new HttpStatusCodeResult((int)HttpStatusCode.Forbidden);
+                return new StatusCodeResult(403);
             }
 
             return new ObjectResult(DataMapping._questionToDto(question));
@@ -63,11 +64,11 @@ namespace Tailspin.Surveys.WebAPI.Controllers
         {
             if (questionDto == null)
             {
-                return HttpBadRequest();
+                return BadRequest();
             }
             if (!ModelState.IsValid)
             {
-                return HttpBadRequest(ModelState);
+                return BadRequest(ModelState);
             }
 
             var question = new Question
@@ -81,13 +82,13 @@ namespace Tailspin.Surveys.WebAPI.Controllers
             var survey = await _surveyStore.GetSurveyAsync(question.SurveyId);
             if (survey == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
 
             // The AuthorizationService uses the policies in the Tailspin.Surveys.Security project
             if (!await _authorizationService.AuthorizeAsync(User, survey, Operations.Update))
             {
-                return new HttpStatusCodeResult((int)HttpStatusCode.Forbidden);
+                return new StatusCodeResult(403);
             }
 
 
@@ -106,22 +107,22 @@ namespace Tailspin.Surveys.WebAPI.Controllers
         {
             if (questionDto == null || questionDto.Id != id)
             {
-                return HttpBadRequest();
+                return BadRequest();
             }
             if (!ModelState.IsValid)
             {
-                return HttpBadRequest(ModelState);
+                return BadRequest(ModelState);
             }
 
             var question = await _questionStore.GetQuestionAsync(id);
             if (question == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
 
             if (!await _authorizationService.AuthorizeAsync(User, question.Survey, Operations.Update))
             {
-                return new HttpStatusCodeResult((int)HttpStatusCode.Forbidden);
+                return new StatusCodeResult(403);
             }
 
 
@@ -141,19 +142,19 @@ namespace Tailspin.Surveys.WebAPI.Controllers
         /// This method deletes the <see cref="Question"/> with the specified id value.
         /// </summary>
         /// <param name="id">The id of the <see cref="Question"/></param>
-        /// <returns>A <see cref="NoContentResult"/> if deletion is successful or a <see cref="HttpNotFoundResult"/> if the <see cref="Question"/> is not found</returns>
+        /// <returns>A <see cref="NoContentResult"/> if deletion is successful or a <see cref="NotFoundResult"/> if the <see cref="Question"/> is not found</returns>
         [HttpDelete("questions/{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             var question = await _questionStore.GetQuestionAsync(id);
             if (question == null)
             {
-                return HttpNotFound();
+                return NotFound();
             }
 
             if (!await _authorizationService.AuthorizeAsync(User, question.Survey, Operations.Update))
             {
-                return new HttpStatusCodeResult((int)HttpStatusCode.Forbidden);
+                return new StatusCodeResult(403);
             }
 
             await _questionStore.DeleteQuestionAsync(question);

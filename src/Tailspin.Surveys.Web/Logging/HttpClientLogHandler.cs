@@ -5,7 +5,7 @@ using System.Net.Http;
 using System.Diagnostics;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNet.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Tailspin.Surveys.Security;
 using System.Threading;
@@ -53,7 +53,7 @@ namespace Tailspin.Surveys.Web.Logging
             }
             else
             {
-                _logger.RequestFailed(method, uri, requestStopwatch.Elapsed, response.ReasonPhrase, response.StatusCode.ToString(), userId, issuerValue);
+                _logger.RequestFailed(method, uri, requestStopwatch.Elapsed, response.ReasonPhrase, (int)response.StatusCode, userId, issuerValue);
 
             }
             return response;

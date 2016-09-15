@@ -102,13 +102,13 @@ namespace Tailspin.Surveys.Configuration.KeyVault
             string password;
             var cert = CertificateUtility.FindCertificateByThumbprint(_storeName, _storeLocation, _certificateThumbprint, _validateCertificate);
             var certBytes = CertificateUtility.ExportCertificateWithPrivateKey(cert, out password);
-            _assertion = new ClientAssertionCertificate(_appClientId, certBytes, password);
+            _assertion = new ClientAssertionCertificate(_appClientId, new X509Certificate2(certBytes, password));
             Data = new Dictionary<string, string>();
 
             // This returns a list of identifiers which are uris to the secret, you need to use the identifier to get the actual secrets again.
             var kvClient = new KeyVaultClient(GetTokenAsync);
             var secretsResponseList = await kvClient.GetSecretsAsync(_vault, MaxSecrets, token);
-            foreach (var secretItem in secretsResponseList.Value)
+            foreach (var secretItem in secretsResponseList.Value ?? new List<SecretItem>())
             {
                 //The actual config key is stored in a tag with the Key "ConfigKey" since : is not supported in a shared secret name by KeyVault
                 if (secretItem.Tags != null && secretItem.Tags.ContainsKey(ConfigKey))
@@ -124,7 +124,7 @@ namespace Tailspin.Surveys.Configuration.KeyVault
             AuthenticationResult result = null;
             try
             {
-                var authContext = new AuthenticationContext(authority, TokenCache.DefaultShared);
+                var authContext = new AuthenticationContext(authority);
                 result = await authContext.AcquireTokenAsync(resource, _assertion);
             }
             catch (Exception exp)

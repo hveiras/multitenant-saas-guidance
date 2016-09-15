@@ -1,12 +1,13 @@
 ![Microsoft patterns & practices](http://pnp.azurewebsites.net/images/pnp-logo.png)
-# Building Multi-Tenant SaaS Applications on Windows Azure
 
-## Phase 1: Identity Management
+# Identity Management for Multitenant Applications in Microsoft Azure
 
-This project consists of:
+This sample shows how to manage user identities in a multitenant application on Microsoft Azure, using Azure Active Directory for authentication.
 
-- The Tailspin Surveys application, a reference implementation of a multi-tenant SaaS application.
-- Written guidance on best practices for multitenant applications in Microsoft Azure.
+The project consists of:
+
+- A reference implementation of a multi-tenant SaaS application.
+- Written guidance on best practices for identity management in multitenant applications on Microsoft Azure.
 
 The written guidance reflects what we learned in the process of building the application. To get started with the application, see [Running the Surveys application](docs/running-the-app.md).
 
@@ -24,9 +25,17 @@ The written guidance reflects what we learned in the process of building the app
 - [Authorization](docs/07-authorization.md)
     - Role-based authorization
     - Resource-based authorization
-- [Federating with a customer's AD FS](docs/08-adfs.md)
-    - How to authenticate via Active Directory Federation Services (AD FS), in order to federate with a customer's on-premise Active Directory.
+- [Securing a backend web API](docs/08-web-api.md)
+    - How to use bearer tokens to authenticate calls from the web app to a backend web API.
+- [Caching access tokens](docs/09-token-caching.md)
+    - Caching OAuth2 access tokens in a web app.
 - Appendixes
-    - [Authorization APIs in ASP.NET 5](docs/appendixes/aspnet5-authorization.md)
-    - [Overview of OAuth 2 and OpenID Connect](docs/appendixes/about-oauth2-oidc.md)
+    - [Federating with a customer's AD FS](docs/appendixes/adfs.md)
     - [Using client assertion to get access tokens from Azure AD](docs/appendixes/client-assertion.md)
+    - [Using Key Vault to protect application secrets](docs/appendixes/key-vault.md)
+    - [Overview of OAuth 2 and OpenID Connect](docs/appendixes/about-oauth2-oidc.md)
+    - [Understanding ASP.NET 5 authorization handlers](docs/appendixes/aspnet5-authorization.md)
+
+This project has adopted the [Microsoft Open Source Code of Conduct](https://opensource.microsoft.com/codeofconduct/). For more information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeofconduct/faq/) or contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additional questions or comments.
+
+

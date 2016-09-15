@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using Tailspin.Surveys.Common;
 using Tailspin.Surveys.Data.DataModels;
 
@@ -45,15 +45,24 @@ namespace Tailspin.Surveys.Data.DataStore
 
         public async Task<ICollection<Survey>> GetSurveysByContributorAsync(int userId, int pageIndex = 0, int pageSize = Constants.DefaultPageSize)
         {
-            var cappedPageSize = Math.Min(Constants.MaxPageSize, pageSize);
-            return await _dbContext.SurveyContributors.Include(sc => sc.Survey)
-                                                      .Where(sc => sc.UserId == userId && !sc.Survey.Published)
-                                                      .Select(sc => sc.Survey)
-                                                      .OrderBy(s => s.Id)
-                                                      .Skip(pageIndex * cappedPageSize)
-                                                      .Take(cappedPageSize)
-                                                      .ToArrayAsync()
-                                                      .ConfigureAwait(false);
+            try
+            {
+                var cappedPageSize = Math.Min(Constants.MaxPageSize, pageSize);
+                return await _dbContext.SurveyContributors.Include(sc => sc.Survey)
+                    .Where(sc => sc.UserId == userId && !sc.Survey.Published)
+                    .Select(sc => sc.Survey)
+                    .OrderBy(s => s.Id)
+                    .Skip(pageIndex * cappedPageSize)
+                    .Take(cappedPageSize)
+                    .ToArrayAsync()
+                    .ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+
+                throw ex;
+            }
+            
         }
 
         public async Task<ICollection<Survey>> GetPublishedSurveysByTenantAsync(int tenantId, int pageIndex = 0, int pageSize = Constants.DefaultPageSize)
@@ -98,16 +107,6 @@ namespace Tailspin.Surveys.Data.DataStore
                 .Include(survey => survey.Requests)
                 .SingleOrDefaultAsync(s => s.Id == id)
                 .ConfigureAwait(false);
-        }
-
-        public async Task<Survey> GetSurveyWithContributorsAsync(int id)
-        {
-            var survey = await _dbContext.Surveys
-                .Include(s => s.Contributors)
-                .ThenInclude(x => x.User)
-                .SingleOrDefaultAsync(s => s.Id == id)
-                .ConfigureAwait(false);
-            return survey;
         }
 
         public async Task<Survey> UpdateSurveyAsync(Survey survey)

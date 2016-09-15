@@ -8,6 +8,9 @@ using Tailspin.Surveys.Configuration.KeyVault;
 
 namespace Microsoft.Extensions.DependencyInjection
 {
+/// <summary>
+/// Extension methods on IConfigurationBuilder for loading configuration from KeyVault
+/// </summary>
     public static class KeyVaultConfigurationExtensions
     {
 
@@ -24,7 +27,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns></returns>
         public static IConfigurationBuilder AddKeyVaultSecrets(this IConfigurationBuilder configurationBuilder, string appClientId, string vaultName, StoreName storeName, StoreLocation storeLocation, string certificateThumbprint, bool validateCertificate, ILoggerFactory loggerFactory)
         {
-            configurationBuilder.Add(new KeyVaultConfigurationProvider(appClientId, vaultName, storeName, storeLocation, certificateThumbprint, validateCertificate, loggerFactory));
+            configurationBuilder.Add((IConfigurationSource)new KeyVaultConfigurationProvider(appClientId, vaultName, storeName, storeLocation, certificateThumbprint, validateCertificate, loggerFactory));
             return configurationBuilder;
         }
 
@@ -39,7 +42,7 @@ namespace Microsoft.Extensions.DependencyInjection
         /// <returns></returns>
         public static IConfigurationBuilder AddKeyVaultSecrets(this IConfigurationBuilder configurationBuilder, string appClientId, string vaultName, string certificateThumbprint, bool validateCertificate, ILoggerFactory loggerFactory)
         {
-            configurationBuilder.Add(new KeyVaultConfigurationProvider(appClientId, vaultName, certificateThumbprint, validateCertificate, loggerFactory));
+            configurationBuilder.Add((IConfigurationSource)new KeyVaultConfigurationProvider(appClientId, vaultName, certificateThumbprint, validateCertificate, loggerFactory));
             return configurationBuilder;
         }
     }

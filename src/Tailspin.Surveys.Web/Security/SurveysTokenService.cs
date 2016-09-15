@@ -5,20 +5,22 @@ using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.OptionsModel;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Tailspin.Surveys.Common;
 using Tailspin.Surveys.Common.Configuration;
 using Tailspin.Surveys.TokenStorage;
 using Tailspin.Surveys.Web.Configuration;
 using Tailspin.Surveys.Web.Logging;
+using System.Globalization;
+using Microsoft.AspNetCore.Http.Authentication;
 
 namespace Tailspin.Surveys.Web.Security
 {
     /// <summary>
     /// This service helps with the acquisition of access tokens from Azure Active Directory.
     /// </summary>
-    public class AzureADTokenService : IAccessTokenService
+    public class SurveysTokenService : ISurveysTokenService
     {
         private readonly AzureAdOptions _adOptions;
         private readonly ITokenCacheService _tokenCacheService;
@@ -26,17 +28,17 @@ namespace Tailspin.Surveys.Web.Security
         private readonly ICredentialService _credentialService;
 
         /// <summary>
-        /// Initializes a new instance of <see cref="Tailspin.Surveys.Web.Security.AzureADTokenService"/>.
+        /// Initializes a new instance of <see cref="Tailspin.Surveys.Web.Security.SurveysTokenService"/>.
         /// </summary>
         /// <param name="options"></param>
         /// <param name="tokenCacheService"></param>
         /// <param name="credentialService"></param>
         /// <param name="logger"></param>
-        public AzureADTokenService(
+        public SurveysTokenService(
             IOptions<ConfigurationOptions> options,
             ITokenCacheService tokenCacheService,
             ICredentialService credentialService,
-            ILogger<AzureADTokenService> logger)
+            ILogger<SurveysTokenService> logger)
         {
             _adOptions = options?.Value?.AzureAd;
             _tokenCacheService = tokenCacheService;
@@ -69,6 +71,7 @@ namespace Tailspin.Surveys.Web.Security
                 _logger.BearerTokenAcquisitionStarted(resource, userName, issuerValue);
                 var authContext = await CreateAuthenticationContext(user)
                     .ConfigureAwait(false);
+
                 var result = await authContext.AcquireTokenSilentAsync(
                     resource,
                     await _credentialService.GetCredentialsAsync().ConfigureAwait(false),
@@ -91,8 +94,9 @@ namespace Tailspin.Surveys.Web.Security
             Guard.ArgumentNotNull(claimsPrincipal, nameof(claimsPrincipal));
 
             return new AuthenticationContext(
-               Constants.AuthEndpointPrefix + claimsPrincipal.GetTenantIdValue(),
-                await _tokenCacheService.GetCacheAsync(claimsPrincipal.GetObjectIdentifierValue(), _adOptions.ClientId)
+                //_adOptions.AadInstance,
+                string.Format(CultureInfo.InvariantCulture, Constants.AuthEndpointPrefix, _adOptions.Tenant),
+                await _tokenCacheService.GetCacheAsync(claimsPrincipal)
                 .ConfigureAwait(false));
         }
 
@@ -105,7 +109,7 @@ namespace Tailspin.Surveys.Web.Security
         /// <param name="redirectUri">The Uri of the application requesting the access token</param>
         /// <param name="resource">The resouce identifier of the target resource</param>
         /// <returns>A <see cref="System.Threading.Tasks.Task{Microsoft.IdentityModel.Clients.ActiveDirectory.AuthenticationResult}"/>.</returns>
-        public async Task<AuthenticationResult> RequestAccessTokenAsync(
+        public async Task<AuthenticationResult> RequestTokenAsync(
             ClaimsPrincipal claimsPrincipal,
             string authorizationCode,
             string redirectUri,
@@ -149,7 +153,7 @@ namespace Tailspin.Surveys.Web.Security
         {
             Guard.ArgumentNotNull(claimsPrincipal, nameof(claimsPrincipal));
 
-            await _tokenCacheService.ClearCacheAsync(claimsPrincipal.GetObjectIdentifierValue(), _adOptions.ClientId)
+            await _tokenCacheService.ClearCacheAsync(claimsPrincipal)
                 .ConfigureAwait(false);
         }
     }

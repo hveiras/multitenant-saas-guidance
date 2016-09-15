@@ -4,10 +4,10 @@
 using System.Net;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNet.Authentication.OpenIdConnect;
-using Microsoft.AspNet.Authorization;
-using Microsoft.AspNet.Http.Authentication;
-using Microsoft.AspNet.Mvc;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Authentication;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Tailspin.Surveys.Data.DataModels;
 using Tailspin.Surveys.Data.DTOs;
@@ -15,7 +15,10 @@ using Tailspin.Surveys.Security.Policy;
 using Tailspin.Surveys.Web.Logging;
 using Tailspin.Surveys.Web.Models;
 using Tailspin.Surveys.Web.Services;
-using Microsoft.AspNet.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using System;
+using System.Linq;
+using Tailspin.Surveys.Web.Security;
 
 namespace Tailspin.Surveys.Web.Controllers
 {
@@ -56,7 +59,7 @@ namespace Tailspin.Surveys.Web.Controllers
                 var userId = User.GetSurveyUserIdValue();
                 var user = User.GetObjectIdentifierValue();
                 var issuerValue = User.GetIssuerValue();
-                var actionName = ActionContext.ActionDescriptor.Name;
+                var actionName = ControllerContext.ActionDescriptor.DisplayName;
                 _logger.GetSurveysForUserOperationStarted(actionName, user, issuerValue);
 
                 // The SurveyService.GetSurveysForUserAsync returns a UserSurveysDTO that has properties for Published, Own, and Contribute
@@ -64,20 +67,25 @@ namespace Tailspin.Surveys.Web.Controllers
                 if (result.Succeeded)
                 {
                     // If the user is in the creator role, the view shows a "Create Survey" button.
-                    ViewBag.IsUserCreator = await _authorizationService.AuthorizeAsync(User, PolicyNames.RequireSurveyCreator);
+                    ViewBag.IsUserCreator =
+                        await _authorizationService.AuthorizeAsync(User, PolicyNames.RequireSurveyCreator);
                     _logger.GetSurveysForUserOperationSucceeded(actionName, user, issuerValue);
                     return View(result.Item);
                 }
 
                 _logger.GetSurveysForUserOperationFailed(actionName, user, issuerValue, result.StatusCode);
 
-                if (result.StatusCode == (int)HttpStatusCode.Unauthorized)
+                if (result.StatusCode == (int) HttpStatusCode.Unauthorized)
                 {
                     //this should happen if the bearer token validation fails. We wont sign the user out for 403 - since user may have access to some resources and not others
                     return ReAuthenticateUser();
                 }
 
                 ViewBag.Message = "Unexpected Error";
+            }
+            catch (AuthenticationException)
+            {
+                return ReAuthenticateUser();
             }
             catch
             {
@@ -111,6 +119,10 @@ namespace Tailspin.Surveys.Web.Controllers
                 }
 
                 ViewBag.Message = "Unexpected Error";
+            }
+            catch (AuthenticationException)
+            {
+                return ReAuthenticateUser();
             }
             catch
             {
@@ -174,6 +186,10 @@ namespace Tailspin.Surveys.Web.Controllers
                     return View(survey);
                 }
             }
+            catch (AuthenticationException)
+            {
+                return ReAuthenticateUser();
+            }
             catch
             {
                 ModelState.AddModelError(string.Empty, "Unable to create survey.");
@@ -200,6 +216,10 @@ namespace Tailspin.Surveys.Web.Controllers
                 if (errorResult != null) return errorResult;
 
                 ViewBag.Message = "Unexpected Error";
+            }
+            catch (AuthenticationException)
+            {
+                return ReAuthenticateUser();
             }
             catch
             {
@@ -234,6 +254,10 @@ namespace Tailspin.Surveys.Web.Controllers
 
                 ViewBag.Message = "Unexpected Error";
             }
+            catch (AuthenticationException)
+            {
+                return ReAuthenticateUser();
+            }
             catch
             {
                 ViewBag.Message = "Unexpected Error";
@@ -262,6 +286,10 @@ namespace Tailspin.Surveys.Web.Controllers
                 if (errorResult != null) return errorResult;
 
                 ViewBag.Message = "Unexpected Error";
+            }
+            catch (AuthenticationException)
+            {
+                return ReAuthenticateUser();
             }
             catch
             {
@@ -310,6 +338,10 @@ namespace Tailspin.Surveys.Web.Controllers
                     return View("EditTitle", model);
                 }
             }
+            catch (AuthenticationException)
+            {
+                return ReAuthenticateUser();
+            }
             catch
             {
                 ModelState.AddModelError(string.Empty, "Unable to save changes.");
@@ -336,6 +368,10 @@ namespace Tailspin.Surveys.Web.Controllers
                 if (errorResult != null) return errorResult;
 
                 ViewBag.Message = "Unexpected Error";
+            }
+            catch (AuthenticationException)
+            {
+                return ReAuthenticateUser();
             }
             catch
             {
@@ -385,6 +421,10 @@ namespace Tailspin.Surveys.Web.Controllers
                     return View("~/Views/Shared/Error.cshtml");
                 }
             }
+            catch (AuthenticationException)
+            {
+                return ReAuthenticateUser();
+            }
             catch
             {
                 ViewBag.Message = "Unexpected Error";
@@ -397,7 +437,7 @@ namespace Tailspin.Surveys.Web.Controllers
         /// </summary>
         /// <param name="id">The id of the <see cref="Survey"/></param>
         /// <returns>A view showing contributors associated with a <see cref="Survey"/></returns>
-        public async Task<IActionResult> ShowContributors(int id)
+        public async Task<IActionResult> Contributors(int id)
         {
             try
             {
@@ -411,6 +451,10 @@ namespace Tailspin.Surveys.Web.Controllers
                 if (errorResult != null) return errorResult;
 
                 ViewBag.Message = "Unexpected Error";
+            }
+            catch (AuthenticationException)
+            {
+                return ReAuthenticateUser();
             }
             catch
             {
@@ -440,6 +484,10 @@ namespace Tailspin.Surveys.Web.Controllers
 
                 ViewBag.Message = "Unexpected Error";
             }
+            catch (AuthenticationException)
+            {
+                return ReAuthenticateUser();
+            }
             catch
             {
                 ViewBag.Message = "Unexpected Error";
@@ -460,7 +508,27 @@ namespace Tailspin.Surveys.Web.Controllers
             {
                 if (!ModelState.IsValid)
                 {
-                    return RedirectToAction(nameof(ShowContributors), new { id = contributorRequestViewModel.SurveyId });
+                    return RedirectToAction(nameof(Contributors), new { id = contributorRequestViewModel.SurveyId });
+                }
+
+                var existingContributors = await _surveyService.GetSurveyContributorsAsync(contributorRequestViewModel.SurveyId);
+                if (existingContributors.Succeeded)
+                {
+                    if (existingContributors.Item.Contributors.Any(item =>
+                        String.Equals(item.Email, contributorRequestViewModel.EmailAddress, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        ViewBag.SurveyId = contributorRequestViewModel.SurveyId;
+                        ViewBag.Message = contributorRequestViewModel.EmailAddress + " is already a contributor";
+                        return View();
+                    }
+
+                    if (existingContributors.Item.Requests.Any(item =>
+                        String.Equals(item.EmailAddress, contributorRequestViewModel.EmailAddress, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        ViewBag.SurveyId = contributorRequestViewModel.SurveyId;
+                        ViewBag.Message = contributorRequestViewModel.EmailAddress + " has already been requested before";
+                        return View();
+                    }
                 }
 
                 await _surveyService.AddContributorRequestAsync(new ContributorRequest
@@ -474,13 +542,17 @@ namespace Tailspin.Surveys.Web.Controllers
                 var result = await _surveyService.GetSurveyContributorsAsync(contributorRequestViewModel.SurveyId);
                 if (result.Succeeded)
                 {
-                    return View("ShowContributors",result.Item);
+                    return View("Contributors", result.Item);
                 }
                 else
                 {
                     ViewBag.Message = "Unexpected Error";
                     return View("~/Views/Shared/Error.cshtml");
                 }
+            }
+            catch (AuthenticationException)
+            {
+                return ReAuthenticateUser();
             }
             catch
             {
@@ -516,6 +588,10 @@ namespace Tailspin.Surveys.Web.Controllers
                 if (errorResult != null) return errorResult;
 
                 ViewBag.Message = "Unexpected Error";
+            }
+            catch (AuthenticationException)
+            {
+                return ReAuthenticateUser();
             }
             catch
             {
@@ -567,6 +643,10 @@ namespace Tailspin.Surveys.Web.Controllers
                     }
                 }
             }
+            catch (AuthenticationException)
+            {
+                return ReAuthenticateUser();
+            }
             catch
             {
                 ViewBag.Message = "Unexpected Error";
@@ -602,6 +682,10 @@ namespace Tailspin.Surveys.Web.Controllers
 
                 ViewBag.Message = "Unexpected Error";
             }
+            catch (AuthenticationException)
+            {
+                return ReAuthenticateUser();
+            }
             catch
             {
                 ViewBag.Message = "Unexpected Error";
@@ -611,18 +695,18 @@ namespace Tailspin.Surveys.Web.Controllers
 
         private IActionResult CheckStatusCode(ApiResult result)
         {
-            if (result.StatusCode == (int) HttpStatusCode.Unauthorized)
+            if (result.StatusCode == (int)HttpStatusCode.Unauthorized)
             {
                 return ReAuthenticateUser();
             }
 
-            if (result.StatusCode == (int) HttpStatusCode.Forbidden)
+            if (result.StatusCode == (int)HttpStatusCode.Forbidden)
             {
                 // Redirects user to Forbidden page
                 return new ChallengeResult(CookieAuthenticationDefaults.AuthenticationScheme);
             }
 
-            if (result.StatusCode == (int) HttpStatusCode.NotFound)
+            if (result.StatusCode == (int)HttpStatusCode.NotFound)
             {
                 ModelState.AddModelError(string.Empty, "The survey can not be found");
                 ViewBag.Message = "The survey can not be found";
@@ -675,6 +759,10 @@ namespace Tailspin.Surveys.Web.Controllers
                     }
                 }
             }
+            catch (AuthenticationException)
+            {
+                return ReAuthenticateUser();
+            }
             catch
             {
                 ViewBag.Message = "Unexpected Error";
@@ -687,6 +775,7 @@ namespace Tailspin.Surveys.Web.Controllers
             return new ChallengeResult(OpenIdConnectDefaults.AuthenticationScheme,
                 new AuthenticationProperties
                 {
+                    IsPersistent = true,
                     RedirectUri = Url.Action("SignInCallback", "Account")
                 });
         }

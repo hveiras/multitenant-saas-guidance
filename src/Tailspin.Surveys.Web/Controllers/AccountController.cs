@@ -3,10 +3,10 @@
 
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.AspNet.Authentication.OpenIdConnect;
-using Microsoft.AspNet.Authorization;
-using Microsoft.AspNet.Http.Authentication;
-using Microsoft.AspNet.Mvc;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http.Authentication;
+using Microsoft.AspNetCore.Mvc;
 using Tailspin.Surveys.Web.Security;
 
 namespace Tailspin.Surveys.Web.Controllers
@@ -28,7 +28,7 @@ namespace Tailspin.Surveys.Web.Controllers
         /// <summary>
         /// Starts the AAD/OpenIdConnect authentication flow for a user.
         /// </summary>
-        /// <returns>A <see cref="Microsoft.AspNet.Mvc.ChallengeResult"/> to authenticate a user with AAD and OpenIdConnect.</returns>
+        /// <returns>A <see cref="Microsoft.AspNetCore.Mvc.ChallengeResult"/> to authenticate a user with AAD and OpenIdConnect.</returns>
         [AllowAnonymous]
         public IActionResult SignIn()
         {
@@ -36,6 +36,7 @@ namespace Tailspin.Surveys.Web.Controllers
                 OpenIdConnectDefaults.AuthenticationScheme,
                 new AuthenticationProperties
                 {
+                    IsPersistent = true,
                     RedirectUri = Url.Action("SignInCallback", "Account")
                 });
         }
@@ -43,7 +44,7 @@ namespace Tailspin.Surveys.Web.Controllers
         /// <summary>
         /// Signs out a previously authenticated user.
         /// </summary>
-        /// <returns>A <see cref="Microsoft.AspNet.Mvc.IActionResult"/> containing the result of the sign out operation.</returns>
+        /// <returns>A <see cref="Microsoft.AspNetCore.Mvc.IActionResult"/> containing the result of the sign out operation.</returns>
         public async Task<IActionResult> SignOut()
         {
             var callbackUrl = Url.Action("SignOutCallback", "Account", values: null, protocol: Request.Scheme);
@@ -53,12 +54,12 @@ namespace Tailspin.Surveys.Web.Controllers
         /// <summary>
         /// Starts the tenant registration flow.
         /// </summary>
-        /// <returns>A <see cref="Microsoft.AspNet.Mvc.ChallengeResult"/> to authenticate a user with AAD and OpenIdConnect.</returns>
+        /// <returns>A <see cref="Microsoft.AspNetCore.Mvc.ChallengeResult"/> to authenticate a user with AAD and OpenIdConnect.</returns>
         [AllowAnonymous]
         public IActionResult SignUp()
         {
             // Workaround for https://github.com/aspnet/Security/issues/546
-            HttpContext.Items.Add("signup", "true");
+            //HttpContext.Items.Add("signup", "true");
 
             var state = new Dictionary<string, string> { { "signup", "true" }};
             return new ChallengeResult(
@@ -73,7 +74,7 @@ namespace Tailspin.Surveys.Web.Controllers
         /// Callback method used by the tenant sign up flow.  This can be used for any sign up post-processing work.
         /// </summary>
         /// <param name="returnUrl">Unused in the current implementation.</param>
-        /// <returns>A <see cref="Microsoft.AspNet.Mvc.IActionResult"/> containing the result of the sign out operation.</returns>
+        /// <returns>A <see cref="Microsoft.AspNetCore.Mvc.IActionResult"/> containing the result of the sign out operation.</returns>
         [HttpGet]
         public async Task<IActionResult> SignUpCallback(string returnUrl = null)
         {
@@ -92,7 +93,7 @@ namespace Tailspin.Surveys.Web.Controllers
         /// <summary>
         /// Callback method used when a previously authenticated user is signed up.  This can be used for any sign out post-processing.
         /// </summary>
-        /// <returns>A <see cref="Microsoft.AspNet.Mvc.RedirectToActionResult"/> representing where to redirect the user after sign out has completed.</returns>
+        /// <returns>A <see cref="Microsoft.AspNetCore.Mvc.RedirectToActionResult"/> representing where to redirect the user after sign out has completed.</returns>
         [AllowAnonymous]
         public IActionResult SignOutCallback()
         {
@@ -103,7 +104,7 @@ namespace Tailspin.Surveys.Web.Controllers
         /// Callback method used when a user has been successfully authenticated.  This can be used for any sign in post-processing.
         /// </summary>
         /// <remarks>Any modifications to the user's <see cref="System.Security.Claims.ClaimsPrincipal"/> within this callback will not be persisted across requests.</remarks>
-        /// <returns>A <see cref="Microsoft.AspNet.Mvc.RedirectToActionResult"/> representing where to redirect the user after authentication has completed.</returns>
+        /// <returns>A <see cref="Microsoft.AspNetCore.Mvc.RedirectToActionResult"/> representing where to redirect the user after authentication has completed.</returns>
         [HttpGet]
         public IActionResult SignInCallback(string returnUrl = null)
         {

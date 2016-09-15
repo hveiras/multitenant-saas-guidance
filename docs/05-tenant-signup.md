@@ -21,14 +21,13 @@ After the admin clicks **Accept**, other users within the same tenant can sign i
 
 Only an AD administrator can give admin consent, because it grants permission on behalf of the entire organization. If a non-administrator tries to authenticate with the admin consent flow, Azure AD displays an error:
 
-If at a later point the application requires additional permissions, the customer will need to remove the application from the tenant and sign up again, in order to consent to the updated permissions.  
-
 ![Consent error](media/sign-up/consent-error.png)
 
+If the application requires additional permissions at a later point, the customer will need to sign up again and consent to the updated permissions.  
 
 # Implementing tenant sign-up
 
-For the Tailspin Surveys application,  we defined several requirements for the sign-up process:
+For the [Tailspin Surveys][Tailspin] application,  we defined several requirements for the sign-up process:
 
 -	A tenent must sign up before users can sign in.
 -	Sign-up uses the admin consent flow.
@@ -54,6 +53,7 @@ public IActionResult SignIn()
         OpenIdConnectDefaults.AuthenticationScheme,
         new AuthenticationProperties
         {
+            IsPersistent = true,
             RedirectUri = Url.Action("SignInCallback", "Account")
         });
 }
@@ -76,8 +76,6 @@ Now compare the `SignUp` action:
             });
     }
 
-> This code includes a workaround for a known bug in ASP.NET 5 RC1. See the [Admin Consent](#adding-the-admin-consent-prompt) section for more information.
-
 Like `SignIn`, the `SignUp` action also returns a `ChallengeResult`. But this time, we add a piece of state information to the `AuthenticationProperties` in the `ChallengeResult`:
 
 -	signup: A Boolean flag, indicating that the user has started the sign-up process.
@@ -86,7 +84,7 @@ The state information in `AuthenticationProperties` gets added to the OpenID Con
 
 ![State parameter](media/sign-up/state-parameter.png)
 
-After the user authenticates in Azure AD and gets redirected back to the application, the authentication ticket contains the state. We are using this fact to make sure the "signup" value persists acrross the entire authentication flow.
+After the user authenticates in Azure AD and gets redirected back to the application, the authentication ticket contains the state. We are using this fact to make sure the "signup" value persists across the entire authentication flow.
 
 ## Adding the admin consent prompt
 
@@ -118,10 +116,7 @@ Note that the prompt is only needed during sign-up. Regular sign-in should not i
 ```
 internal static bool IsSigningUp(this BaseControlContext context)
 {
-    if (context == null)
-    {
-        throw new ArgumentNullException(nameof(context));
-    }
+    Guard.ArgumentNotNull(context, nameof(context));
 
     string signupValue;
     object obj;
@@ -171,45 +166,46 @@ Here is the relevant code from the Surveys application:
     public override async Task AuthenticationValidated(AuthenticationValidatedContext context)
     {
         var principal = context.AuthenticationTicket.Principal;
-        try
+        var userId = principal.GetObjectIdentifierValue();
+        var tenantManager = context.HttpContext.RequestServices.GetService<TenantManager>();
+        var userManager = context.HttpContext.RequestServices.GetService<UserManager>();
+        var issuerValue = principal.GetIssuerValue();
+        _logger.AuthenticationValidated(userId, issuerValue);
+
+        // Normalize the claims first.
+        NormalizeClaims(principal);
+        var tenant = await tenantManager.FindByIssuerValueAsync(issuerValue)
+            .ConfigureAwait(false);
+
+        if (context.IsSigningUp())
         {
-            var userId = principal.GetObjectIdentifierValue();
-            var tenantManager = context.HttpContext.RequestServices.GetService<TenantManager>();
-            var userManager = context.HttpContext.RequestServices.GetService<UserManager>();
-            var issuerValue = principal.GetIssuerValue();
-
-            // Normalize the claims first.
-            NormalizeClaims(principal);
-            var tenant = await tenantManager.FindByIssuerValueAsync(issuerValue);
-
-            if (context.IsSigningUp())
+            // Originally, we were checking to see if the tenant was non-null, however, this would not allow
+            // permission changes to the application in AAD since a re-consent may be required.  Now we just don't
+            // try to recreate the tenant.
+            if (tenant == null)
             {
-                if (tenant == null)
-                {
-                    tenant = await SignUpTenantAsync(context, tenantManager);
-                }
-
-                // In this case, we need to go ahead and set up the user signing us up.
-                await CreateOrUpdateUserAsync(context.AuthenticationTicket, userManager, tenant);
-            }
-            else
-            {
-                if (tenant == null)
-                {
-                    throw new SecurityTokenValidationException($"Tenant {issuerValue} is not registered");
-                }
-
-                await CreateOrUpdateUserAsync(context.AuthenticationTicket, userManager, tenant);
+                tenant = await SignUpTenantAsync(context, tenantManager)
+                    .ConfigureAwait(false);
             }
 
+            // In this case, we need to go ahead and set up the user signing us up.
+            await CreateOrUpdateUserAsync(context.AuthenticationTicket, userManager, tenant)
+                .ConfigureAwait(false);
         }
-        catch
+        else
         {
-            // Handle error (not shown)
+            if (tenant == null)
+            {
+                _logger.UnregisteredUserSignInAttempted(userId, issuerValue);
+                throw new SecurityTokenValidationException($"Tenant {issuerValue} is not registered");
+            }
+
+            await CreateOrUpdateUserAsync(context.AuthenticationTicket, userManager, tenant)
+                .ConfigureAwait(false);
         }
     }
 
-> See [SurveyAuthenticationEvents.cs](https://github.com/mspnp/multitenant-saas-guidance/blob/master/src/Tailspin.Surveys.Web/Security/SurveyAuthenticationEvents.cs). This code snippet omits some logging and other details that aren't relevant to this discussion.
+> See [SurveyAuthenticationEvents.cs](https://github.com/mspnp/multitenant-saas-guidance/blob/master/src/Tailspin.Surveys.Web/Security/SurveyAuthenticationEvents.cs).
 
 This code does the following:
 
@@ -225,15 +221,8 @@ Here is the [SignUpTenantAsync](https://github.com/mspnp/multitenant-saas-guidan
 
     private async Task<Tenant> SignUpTenantAsync(BaseControlContext context, TenantManager tenantManager)
     {
-        if (context == null)
-        {
-            throw new ArgumentNullException(nameof(context));
-        }
-
-        if (tenantManager == null)
-        {
-            throw new ArgumentNullException(nameof(tenantManager));
-        }
+        Guard.ArgumentNotNull(context, nameof(context));
+        Guard.ArgumentNotNull(tenantManager, nameof(tenantManager));
 
         var principal = context.AuthenticationTicket.Principal;
         var issuerValue = principal.GetIssuerValue();
@@ -245,7 +234,8 @@ Here is the [SignUpTenantAsync](https://github.com/mspnp/multitenant-saas-guidan
 
         try
         {
-            await tenantManager.CreateAsync(tenant);
+            await tenantManager.CreateAsync(tenant)
+                .ConfigureAwait(false);
         }
         catch(Exception ex)
         {
@@ -256,8 +246,6 @@ Here is the [SignUpTenantAsync](https://github.com/mspnp/multitenant-saas-guidan
         return tenant;
     }
 
-> Note: If you try to sign up the tenant that is hosting the app, Azure AD returns a generic error. To avoid this, you can seed the database with the SaaS provider's tenant.
-
 Here is a summary of the entire sign-up flow in the Surveys application:
 
 1.	The user clicks the **Sign Up** button.
@@ -266,3 +254,5 @@ Here is a summary of the entire sign-up flow in the Surveys application:
 4.	The OpenID Connect middleware redirects to Azure AD and the user authenticates.
 5.	In the `AuthenticationValidated` event, look for the "signup" state.
 6.	Add the tenant to the database.
+
+[Tailspin]: 02-tailspin-scenario.md

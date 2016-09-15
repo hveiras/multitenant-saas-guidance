@@ -1,6 +1,6 @@
 #  Application roles
 
-Application roles are used to assign permissions to users. In the Surveys application, we defined these roles:
+Application roles are used to assign permissions to users. For example, the [Tailspin Surveys][Tailspin] application defines the following roles:
 
 - Administrator. Can perform all CRUD operations on any survey that belongs to that tenant.
 - Creator. Can create new surveys.
@@ -8,28 +8,33 @@ Application roles are used to assign permissions to users. In the Surveys applic
 
 You can see that roles ultimately get translated into permissions, during [authorization](07-authorization.md). But the first question is how to assign and manage roles. We identified three main options:
 
--	[Azure AD App Roles](#azure-ad-app-roles)
--	[Azure AD security groups](#azure-ad-security-groups)
--	[Application role manager](#application-role-manager).
+-	[Azure AD App Roles](#roles-using-azure-ad-app-roles)
+-	[Azure AD security groups](#roles-using-azure-ad-security-groups)
+-	[Application role manager](#roles-using-an-application-role-manager).
 
-## Azure AD App Roles
+## Roles using Azure AD App Roles
 
-In this approach, The SaaS provider defines the application roles by adding them to the application manifest. An admin for the customer's AD directory assigns users to the roles. When a user signs in, the user's assigned roles are sent as claims.
+This is the approach that we used in the Tailspin Surveys app.
+
+In this approach, The SaaS provider defines the application roles by adding them to the application manifest. After a customer signs up, an admin for the customer's AD directory assigns users to the roles. When a user signs in, the user's assigned roles are sent as claims.
 
 > Note: If the customer has Azure AD Premium, the admin can assign a security group to a role, and members of the group will inherit the app role. This is a convenient way to manage roles, because the group owner doesn't need to be an AD admin.
 
-Advantages:
+Advantages of this approach:
+
 -	Simple programming model.
 -	Roles are specific to the application. The role claims for one application are not sent to another application.
 -	If the customer removes the application from their AD tenant, the roles go away.
 -	The application doesn't need any extra Active Directory permissions, other than reading the user's profile.
 
 Drawbacks:
--	Customers without Azure AD Premium cannot assign security groups to roles. For these customers, all user assignments must be done by an AD administrator.
+
+- Customers without Azure AD Premium cannot assign security groups to roles. For these customers, all user assignments must be done by an AD administrator.
+- If you have a backend web API, which is separate from the web app, then role assignments for the web app don't apply to the web API. For more discussion of this point, see [Securing a backend web API](08-web-api.md).
 
 ### Implementation
 
-**Define the roles.** The SaaS provider declares the app roles in the application manifest. For example, here are the roles that we defined for the Surveys app:
+**Define the roles.** The SaaS provider declares the app roles in the application manifest. For example, here is the manifest entry for the Surveys app:
 
     "appRoles": [
       {
@@ -56,7 +61,7 @@ Drawbacks:
 
 The `value`  property appears in the role claim. The `id` property is the unique identifier for the defined role. Always generate a new GUID value for `id`.
 
-**Assign users**. When a new customer signs up, after the application is registered in the customer's AD tenant, an AD admin for that tenant will assign users to roles.
+**Assign users**. When a new customer signs up, the application is registered in the customer's AD tenant. At this point, an AD admin for that tenant can assign users to roles.
 
 >	As noted earlier, customers with Azure AD Premium can also assign security groups to roles.
 
@@ -72,7 +77,7 @@ A user can have multiple roles, or no role. In your authorization code, don't as
 
     if (context.User.HasClaim(ClaimTypes.Role, "Admin")) { ... }
 
-## Azure AD security groups
+## Roles using Azure AD security groups
 
 In this approach, roles are represented as AD security groups. The application assigns permissions to users based on their security group memberships.
 
@@ -80,10 +85,10 @@ Advantages:
 -	For customers who do not have Azure AD Premium, this approach enables the customer to use security groups to manage role assignments.
 
 Disadvantages
--	Complexity. Because every tenant sends different group claims, the app must keep track of which security groups correspond to which application roles, for each tenant.
--	If the customer removes the application from their AD tenant, the security groups are left in the AD tenant.
+- Complexity. Because every tenant sends different group claims, the app must keep track of which security groups correspond to which application roles, for each tenant.
+- If the customer removes the application from their AD tenant, the security groups are left in their AD directory.
 
-#### Implementation
+### Implementation
 
 In the application manifest, set the `groupMembershipClaims` property to "SecurityGroup". This is needed to get group membership claims from AAD.
 
@@ -92,7 +97,7 @@ In the application manifest, set the `groupMembershipClaims` property to "Securi
        "groupMembershipClaims": "SecurityGroup",
     }
 
-When a new customer signs up, the application instructs the customer to create security groups for the roles needed by the application. The customer then neesd to enter the group object IDs into the application. The application stores these in a table that maps group IDs to application roles, per tenant.
+When a new customer signs up, the application instructs the customer to create security groups for the roles needed by the application. The customer then needs to enter the group object IDs into the application. The application stores these in a table that maps group IDs to application roles, per tenant.
 
 > Note: Alternatively, the application could create the groups programmatically, using the Azure AD Graph API.  This would be less error prone. However, it requires the application to obtain "read and write all groups" permissions for the customer's AD directory. Many customers might be unwilling to grant this level of access.
 
@@ -101,11 +106,11 @@ When a user signs in:
 1.	The application receives the user's groups as claims. The value of each claim is the object ID of a group.
 2.	Azure AD limits the number of groups sent in the token. If the number of groups exceeds this limit, Azure AD sends a special "overage" claim. If that claim is present, the application must query the Azure AD Graph API to get all of the groups to which that user belongs. For details, see [Authorization in Cloud Applications using AD Groups](http://www.dushyantgill.com/blog/2014/12/10/authorization-cloud-applications-using-ad-groups/), under the section titled "Groups claim overage".
 3.	The application looks up the object IDs in its own database, to find the corresponding application roles to assign to the user.
-4.	The app adds a custom claim value to the user principal that expresses the application role. For example: "survey_role"="SurveyAdmin".
+4.	The application adds a custom claim value to the user principal that expresses the application role. For example: `survey_role` = "SurveyAdmin".
 
 Authorization policies should use the custom role claim, not the group claim.
 
-## Application role manager
+## Roles using an application role manager
 
 With this approach, application roles are not stored in Azure AD at all. Instead, the application stores the role assignments for each user in its own DB &mdash; for example, using the **RoleManager** class in ASP.NET Identity.
 
@@ -122,8 +127,11 @@ There are many existing examples for this approach. For example, see [Create an 
 
 ## Additional resources
 
--	[Authorization in a web app using Azure AD application roles & role claims](https:\azure.microsoft.com\en-us\documentation\samples\active-directory-dotnet-webapp-roleclaims) (sample)
+-	[Authorization in a web app using Azure AD application roles & role claims](https://azure.microsoft.com/en-us/documentation/samples/active-directory-dotnet-webapp-roleclaims/)
 -	[Authorization in Cloud Applications using AD Groups](http://www.dushyantgill.com/blog/2014/12/10/authorization-cloud-applications-using-ad-groups/)
 -	[Roles based access control in cloud applications using Azure AD](http://www.dushyantgill.com/blog/2014/12/10/roles-based-access-control-in-cloud-applications-using-azure-ad/)
 -	[Supported Token and Claim Types](https://azure.microsoft.com/en-us/documentation/articles/active-directory-token-and-claims/).  Describes the role and group claims in Azure AD.
 -	[Understanding the Azure Active Directory application manifest](https://azure.microsoft.com/en-us/documentation/articles/active-directory-application-manifest/)
+
+
+[Tailspin]: 02-tailspin-scenario.md

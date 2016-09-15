@@ -3,8 +3,8 @@
 
 using System.Collections.Generic;
 using System.Security.Claims;
-using Microsoft.AspNet.Authorization;
-using Microsoft.AspNet.Authorization.Infrastructure;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization.Infrastructure;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Tailspin.Surveys.Data.DataModels;
@@ -25,10 +25,10 @@ namespace MultiTentantSurveyAppTests
             {
                 new Claim(SurveyClaimTypes.SurveyUserIdClaimType, "54321"),
                 new Claim(SurveyClaimTypes.SurveyTenantIdClaimType, "12345"),
-                new Claim(SurveyClaimTypes.TenantId, "tenantid"),
+                new Claim(AzureADClaimTypes.TenantId, "tenantid"),
                 new Claim(ClaimTypes.Role, Roles.SurveyCreator)
             }));
-            var authzContext = new AuthorizationContext(new IAuthorizationRequirement[] { }, principal, survey);
+            var authzContext = new AuthorizationHandlerContext(new IAuthorizationRequirement[] { }, principal, survey);
             var target = new TestableSurveyAuthorizationHandler();
             target.Handle(authzContext, Operations.Read, survey);
             Assert.True(authzContext.HasSucceeded);
@@ -42,9 +42,9 @@ namespace MultiTentantSurveyAppTests
             {
                 new Claim(SurveyClaimTypes.SurveyUserIdClaimType, "54321"),
                 new Claim(SurveyClaimTypes.SurveyTenantIdClaimType, "12345"),
-                new Claim(SurveyClaimTypes.TenantId, "tenantid")
+                new Claim(AzureADClaimTypes.TenantId, "tenantid")
             }));
-            var authzContext = new AuthorizationContext(new IAuthorizationRequirement[] { }, principal, survey);
+            var authzContext = new AuthorizationHandlerContext(new IAuthorizationRequirement[] { }, principal, survey);
             var target = new TestableSurveyAuthorizationHandler();
             target.Handle(authzContext, Operations.Read, survey);
             Assert.True(authzContext.HasSucceeded);
@@ -58,13 +58,13 @@ namespace MultiTentantSurveyAppTests
             {
                 new Claim(SurveyClaimTypes.SurveyUserIdClaimType, "11111"),
                 new Claim(SurveyClaimTypes.SurveyTenantIdClaimType, "12345"),
-                new Claim(SurveyClaimTypes.TenantId, "tenantid"),
+                new Claim(AzureADClaimTypes.TenantId, "tenantid"),
                 new Claim(ClaimTypes.Role, Roles.SurveyCreator)
             }));
-            var authzContext = new AuthorizationContext(new IAuthorizationRequirement[] { }, principal, survey);
+            var authzContext = new AuthorizationHandlerContext(new IAuthorizationRequirement[] { }, principal, survey);
             var target = new TestableSurveyAuthorizationHandler();
             target.Handle(authzContext, Operations.Read, survey);
-            Assert.True(authzContext.HasFailed);
+            Assert.False(authzContext.HasSucceeded);
         }
 
         [Fact]
@@ -75,10 +75,10 @@ namespace MultiTentantSurveyAppTests
             {
                 new Claim(SurveyClaimTypes.SurveyUserIdClaimType, "54321"),
                 new Claim(SurveyClaimTypes.SurveyTenantIdClaimType, "12345"),
-                new Claim(SurveyClaimTypes.TenantId, "tenantid"),
+                new Claim(AzureADClaimTypes.TenantId, "tenantid"),
                 new Claim(ClaimTypes.Role, Roles.SurveyCreator)
             }));
-            var authzContext = new AuthorizationContext(new IAuthorizationRequirement[] { }, principal, survey);
+            var authzContext = new AuthorizationHandlerContext(new IAuthorizationRequirement[] { }, principal, survey);
             var target = new TestableSurveyAuthorizationHandler();
             target.Handle(authzContext, Operations.Update, survey);
             Assert.True(authzContext.HasSucceeded);
@@ -92,9 +92,9 @@ namespace MultiTentantSurveyAppTests
             {
                 new Claim(SurveyClaimTypes.SurveyUserIdClaimType, "54321"),
                 new Claim(SurveyClaimTypes.SurveyTenantIdClaimType, "54321"),
-                new Claim(SurveyClaimTypes.TenantId, "tenantid"),
+                new Claim(AzureADClaimTypes.TenantId, "tenantid"),
             }));
-            var authzContext = new AuthorizationContext(new IAuthorizationRequirement[] { }, principal, survey);
+            var authzContext = new AuthorizationHandlerContext(new IAuthorizationRequirement[] { }, principal, survey);
             var target = new TestableSurveyAuthorizationHandler();
             target.Handle(authzContext, Operations.Update, survey);
             Assert.True(authzContext.HasSucceeded);
@@ -108,13 +108,13 @@ namespace MultiTentantSurveyAppTests
             {
                 new Claim(SurveyClaimTypes.SurveyUserIdClaimType, "11111"),
                 new Claim(SurveyClaimTypes.SurveyTenantIdClaimType, "12345"),
-                new Claim(SurveyClaimTypes.TenantId, "tenantid"),
+                new Claim(AzureADClaimTypes.TenantId, "tenantid"),
                 new Claim(ClaimTypes.Role, Roles.SurveyCreator)
             }));
-            var authzContext = new AuthorizationContext(new IAuthorizationRequirement[] { }, principal, survey);
+            var authzContext = new AuthorizationHandlerContext(new IAuthorizationRequirement[] { }, principal, survey);
             var target = new TestableSurveyAuthorizationHandler();
             target.Handle(authzContext, Operations.Update, survey);
-            Assert.True(authzContext.HasFailed);
+            Assert.False(authzContext.HasSucceeded);
         }
 
         [Fact]
@@ -125,13 +125,13 @@ namespace MultiTentantSurveyAppTests
             {
                 new Claim(SurveyClaimTypes.SurveyUserIdClaimType, "11111"),
                 new Claim(SurveyClaimTypes.SurveyTenantIdClaimType, "12345"),
-                new Claim(SurveyClaimTypes.TenantId, "tenantid"),
+                new Claim(AzureADClaimTypes.TenantId, "tenantid"),
                 new Claim(ClaimTypes.Role, Roles.SurveyCreator)
             }));
-            var authzContext = new AuthorizationContext(new IAuthorizationRequirement[] { }, principal, survey);
+            var authzContext = new AuthorizationHandlerContext(new IAuthorizationRequirement[] { }, principal, survey);
             var target = new TestableSurveyAuthorizationHandler();
             target.Handle(authzContext, Operations.Delete, survey);
-            Assert.True(authzContext.HasFailed);
+            Assert.False(authzContext.HasSucceeded);
         }
 
         [Fact]
@@ -142,10 +142,10 @@ namespace MultiTentantSurveyAppTests
             {
                 new Claim(SurveyClaimTypes.SurveyUserIdClaimType, "54321"),
                 new Claim(SurveyClaimTypes.SurveyTenantIdClaimType, "12345"),
-                new Claim(SurveyClaimTypes.TenantId, "tenantid"),
+                new Claim(AzureADClaimTypes.TenantId, "tenantid"),
                 new Claim(ClaimTypes.Role, Roles.SurveyCreator)
             }));
-            var authzContext = new AuthorizationContext(new IAuthorizationRequirement[] { }, principal, survey);
+            var authzContext = new AuthorizationHandlerContext(new IAuthorizationRequirement[] { }, principal, survey);
             var target = new TestableSurveyAuthorizationHandler();
             target.Handle(authzContext, Operations.Delete, survey);
             Assert.True(authzContext.HasSucceeded);
@@ -161,7 +161,7 @@ namespace MultiTentantSurveyAppTests
                 new Claim(SurveyClaimTypes.SurveyTenantIdClaimType, "12345"),
                 new Claim(ClaimTypes.Role, Roles.SurveyAdmin)
             }));
-            var authzContext = new AuthorizationContext(new IAuthorizationRequirement[] { }, principal, survey);
+            var authzContext = new AuthorizationHandlerContext(new IAuthorizationRequirement[] { }, principal, survey);
             var target = new TestableSurveyAuthorizationHandler();
             target.Handle(authzContext, Operations.Delete, survey);
             Assert.True(authzContext.HasSucceeded);
@@ -175,13 +175,13 @@ namespace MultiTentantSurveyAppTests
             {
                 new Claim(SurveyClaimTypes.SurveyUserIdClaimType, "11111"),
                 new Claim(SurveyClaimTypes.SurveyTenantIdClaimType, "11111"), // Different tenant from survey
-                new Claim(SurveyClaimTypes.TenantId, "tenantid"),
+                new Claim(AzureADClaimTypes.TenantId, "tenantid"),
                 new Claim(ClaimTypes.Role, Roles.SurveyAdmin)
             }));
-            var authzContext = new AuthorizationContext(new IAuthorizationRequirement[] { }, principal, survey);
+            var authzContext = new AuthorizationHandlerContext(new IAuthorizationRequirement[] { }, principal, survey);
             var target = new TestableSurveyAuthorizationHandler();
             target.Handle(authzContext, Operations.Delete, survey);
-            Assert.True(authzContext.HasFailed);
+            Assert.False(authzContext.HasSucceeded);
         }
 
         [Fact]
@@ -196,7 +196,7 @@ namespace MultiTentantSurveyAppTests
                 new Claim(ClaimTypes.Role, Roles.SurveyAdmin),
                 new Claim(ClaimTypes.Role, Roles.SurveyReader)
             }));
-            var authzContext = new AuthorizationContext(new IAuthorizationRequirement[] { }, principal, survey);
+            var authzContext = new AuthorizationHandlerContext(new IAuthorizationRequirement[] { }, principal, survey);
             var target = new TestableSurveyAuthorizationHandler();
             target.Handle(authzContext, Operations.Delete, survey);
             Assert.True(authzContext.HasSucceeded);
@@ -210,12 +210,12 @@ namespace MultiTentantSurveyAppTests
             {
                 new Claim(SurveyClaimTypes.SurveyUserIdClaimType, "11111"),
                 new Claim(SurveyClaimTypes.SurveyTenantIdClaimType, "12345"),
-                new Claim(SurveyClaimTypes.TenantId, "tenantid"),
+                new Claim(AzureADClaimTypes.TenantId, "tenantid"),
                 new Claim(ClaimTypes.Role, Roles.SurveyReader),
                 new Claim(ClaimTypes.Role, Roles.SurveyCreator),
                 new Claim(ClaimTypes.Role, Roles.SurveyReader)
             }));
-            var authzContext = new AuthorizationContext(new IAuthorizationRequirement[] { }, principal, survey);
+            var authzContext = new AuthorizationHandlerContext(new IAuthorizationRequirement[] { }, principal, survey);
             var target = new TestableSurveyAuthorizationHandler();
             target.Handle(authzContext, Operations.Create, survey);
             Assert.True(authzContext.HasSucceeded);
@@ -229,14 +229,14 @@ namespace MultiTentantSurveyAppTests
             {
                 new Claim(SurveyClaimTypes.SurveyUserIdClaimType, "11111"),
                 new Claim(SurveyClaimTypes.SurveyTenantIdClaimType, "12345"),
-                new Claim(SurveyClaimTypes.TenantId, "tenantid"),
+                new Claim(AzureADClaimTypes.TenantId, "tenantid"),
                 new Claim(ClaimTypes.Role, Roles.SurveyReader),
                 new Claim(ClaimTypes.Role, Roles.SurveyReader)
             }));
-            var authzContext = new AuthorizationContext(new IAuthorizationRequirement[] { }, principal, survey);
+            var authzContext = new AuthorizationHandlerContext(new IAuthorizationRequirement[] { }, principal, survey);
             var target = new TestableSurveyAuthorizationHandler();
             target.Handle(authzContext, Operations.Create, survey);
-            Assert.True(authzContext.HasFailed);
+            Assert.False(authzContext.HasSucceeded);
         }
     }
 
@@ -245,9 +245,9 @@ namespace MultiTentantSurveyAppTests
         private static Mock<ILogger> _logger = new Mock<ILogger>();
         public TestableSurveyAuthorizationHandler():base(_logger.Object)
         {}
-        internal new void Handle(AuthorizationContext context, OperationAuthorizationRequirement operation, Survey resource)
+        internal void Handle(AuthorizationHandlerContext context, OperationAuthorizationRequirement operation, Survey resource)
         {
-            base.Handle(context, operation, resource);
+            base.HandleRequirementAsync(context, operation, resource);
         }
     }
 }
